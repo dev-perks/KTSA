@@ -1,25 +1,24 @@
 import React, { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import { schools } from "../utils/schools";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { Input } from "../ui/input";
+import { Calendar } from "../ui/calendar";
+import { schools } from "../../utils/schools";
 import SchoolCard from "./SchoolCard";
 import { format } from "date-fns";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+} from "../ui/popover";
+import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
 
-export default function ActivityTabs({ selectedRegion }) {
+export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
 
   const filteredSchools = schools.filter((school) => {
-    const selected = "Eastern Cape";
-    if (school.region !== selected) return false;
+    if (school.region !== selectedRegion) return false;
 
     const matchesSearch = search
       ? school.name.toLowerCase().includes(search.toLowerCase())
@@ -33,7 +32,7 @@ export default function ActivityTabs({ selectedRegion }) {
   });
 
   return (
-    <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto">
+    <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
       <TabsList className="w-full flex justify-start border-b border-gray-200">
         <TabsTrigger
           value="open"
@@ -92,9 +91,13 @@ export default function ActivityTabs({ selectedRegion }) {
 
       <TabsContent value="open">
         <div className="mt-4 space-y-4">
-          {filteredSchools.map((school) => (
-            <SchoolCard key={school.id} school={school} />
-          ))}
+          {filteredSchools.length > 0 ? (
+            filteredSchools.map((school) => (
+              <SchoolCard key={school.id} school={school} />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No schools found.</p>
+          )}
         </div>
       </TabsContent>
 

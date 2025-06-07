@@ -1,14 +1,12 @@
 import React from "react";
-import BottomNavbar from "../../components/BottomNavbar";
-import SchoolListHeader from "../../components/SchoolListHeader";
-import ActivityTabs from "../..//components/ActivityTabs";
-import SchoolListPage from "@/components/SchoolListPage";
+import BottomNavbar from "../../components/activity/BottomNavbar";
+import ActivityListPage from "../../components/activity/ActivityListPage";
 
 
 function Activity() {
   return (
     <div>
-      <SchoolListPage />
+      <ActivityListPage />
       <BottomNavbar />
     </div>
   );

@@ -1,129 +1,112 @@
 import React, { useState } from "react";
-import { CalendarIcon, MapPin, School } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { schools } from "../utils/schools";
+import SchoolCard from "./SchoolCard";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
 
-const schoolsData = {
-  Open: [
-    {
-      name: "NEW GARDENS PRIMARY",
-      location: "Eastern Cape - Stutterheim",
-      date: "2025-05-29T11:30",
-      sampling: 1,
-      lunchBox: 0,
-    },
-    {
-      name: "NDAKANA PRIMARY SCHOOL",
-      location: "Eastern Cape - Stutterheim",
-      date: "2025-05-29T11:30",
-      sampling: 1,
-      lunchBox: 0,
-    },
-  ],
-  "In Progress": [
-    {
-      name: "Palmiet primary",
-      location: "KwaZulu-Natal - Reservoir hills",
-      date: "2025-05-26T11:30",
-      sampling: 2,
-      lunchBox: 0,
-    },
-  ],
-  Completed: [
-    {
-      name: "Phalane Primary",
-      location: "KwaZulu-Natal - Richard's bay",
-      date: "2025-06-06T11:30",
-      sampling: 1,
-      lunchBox: 0,
-    },
-  ],
-};
-
-export default function ActivityTabs() {
-  const [region, setRegion] = useState("KwaZulu-Natal");
-  const [activeTab, setActiveTab] = useState("Open");
+export default function ActivityTabs({ selectedRegion }) {
   const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const filteredSchools = schoolsData[activeTab].filter((school) =>
-    school.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSchools = schools.filter((school) => {
+    const selected = "Eastern Cape";
+    if (school.region !== selected) return false;
+
+    const matchesSearch = search
+      ? school.name.toLowerCase().includes(search.toLowerCase())
+      : true;
+
+    const matchesDate = selectedDate
+      ? school.date === format(selectedDate, "yyyy-MM-dd")
+      : true;
+
+    return matchesSearch && matchesDate;
+  });
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      {/* Top Bar: Region Select    + Add Button */}
-      <div className="flex items-center justify-between mb-4">
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          className="border rounded-md px-3 py-2 w-60"
+    <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto">
+      <TabsList className="w-full flex justify-start border-b border-gray-200">
+        <TabsTrigger
+          value="open"
+          className="relative px-4 py-2 text-sm font-medium text-gray-700 data-[state=active]:text-black data-[state=active]:font-semibold"
         >
-          <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-          <option value="Eastern Cape">Eastern Cape</option>
-          <option value="Gauteng">Gauteng</option>
-        </select>
+          Open
+          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+        </TabsTrigger>
+        <TabsTrigger
+          value="progress"
+          className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
+        >
+          In Progress
+          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+        </TabsTrigger>
+        <TabsTrigger
+          value="completed"
+          className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
+        >
+          Completed
+          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+        </TabsTrigger>
+      </TabsList>
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-          + Add Activity
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="grid grid-cols-3 mb-4">
-        {["Open", "In Progress", "Completed"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`py-2 border-b-2 font-medium ${
-              activeTab === tab
-                ? "border-blue-600 text-blue-600"
-                : "border-gray-300 text-gray-600"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Search and Date Filter */}
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
+      <div className="flex gap-2 mt-4">
+        <Input
           placeholder="Search"
-          className="w-full border px-3 py-2 rounded-md"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="w-full"
         />
-        <input type="date" className="w-48 border px-3 py-2 rounded-md" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-[200px] justify-start text-left font-normal"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {selectedDate ? (
+                format(selectedDate, "PPP")
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* School Cards */}
-      <div>
-        {filteredSchools.map((school, index) => (
-          <div key={index} className="mb-4 border rounded-lg shadow p-4">
-            <div className="flex items-center gap-2 font-semibold text-lg mb-1">
-              <School className="w-5 h-5 text-blue-600" />
-              {school.name}
-            </div>
-            <div className="text-sm text-gray-600 flex items-center gap-1 mb-1">
-              <MapPin className="w-4 h-4" />
-              {school.location}
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-700">
-              <div className="flex items-center gap-1">
-                <CalendarIcon className="w-4 h-4" />
-                {new Date(school.date).toLocaleString()}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="font-medium">School Sampling:</span>
-                {school.sampling}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="font-medium">Lunch Box Check:</span>
-                {school.lunchBox}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+      <TabsContent value="open">
+        <div className="mt-4 space-y-4">
+          {filteredSchools.map((school) => (
+            <SchoolCard key={school.id} school={school} />
+          ))}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="progress">
+        <div className="mt-4 text-sm text-gray-500">No progress items yet.</div>
+      </TabsContent>
+
+      <TabsContent value="completed">
+        <div className="mt-4 text-sm text-gray-500">
+          No completed items yet.
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }

@@ -1,15 +1,11 @@
 import React from "react";
-import BottomNavbar from "../../components/activity/BottomNavbar";
 import ActivityListPage from "../../components/activity/ActivityListPage";
+import WithBottomNavbar from "../../components/layout/WithBottomNavbar";
 
-
-function Activity() {
+export default function Activity() {
   return (
-    <div>
+    <WithBottomNavbar>
       <ActivityListPage />
-      <BottomNavbar />
-    </div>
+    </WithBottomNavbar>
   );
 }
-
-export default Activity;

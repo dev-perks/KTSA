@@ -1,4 +1,4 @@
-import { navItems } from "../../utils/navItems"; 
+import { navItems } from "../utils/navItems"; 
 
 const BottomNavbar = () => {
   return (

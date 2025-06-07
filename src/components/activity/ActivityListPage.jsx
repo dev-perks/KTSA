@@ -8,7 +8,7 @@ export default function ActivityListPage() {
   const [selectedRegion, setSelectedRegion] = useState(regionOptions[0].value);
 
   return (
-    <div className="p-4">
+    <div className="overflow-auto pb-24 px-4 pt-4">
       <RegionFilterHeader
         selectedRegion={selectedRegion}
         onRegionChange={setSelectedRegion}

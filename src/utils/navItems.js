@@ -4,21 +4,21 @@ export const navItems = [
   {
     label: "Activity",
     icon: List,
-    active: true,
+    to: "/activity",
   },
   {
     label: "School",
     icon: School,
-    active: false,
+    to: "/school",
   },
   {
     label: "User",
     icon: UserPlus,
-    active: false,
+    to: "/user",
   },
   {
     label: "Profile",
     icon: User,
-    active: false,
+    to: "/profile",
   },
 ];

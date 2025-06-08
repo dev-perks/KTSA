@@ -5,11 +5,7 @@ import { Calendar } from "../ui/calendar";
 import { activityDetails } from "../../utils/activityDetails";
 import ActivityCard from "./ActivityCard";
 import { format } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
 
@@ -17,19 +13,29 @@ export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const filteredActivities = activityDetails.filter((activity) => {
+  // Base filter: region, search term, and date (matches any activity date)
+  const baseFiltered = activityDetails.filter((activity) => {
     if (activity.region !== selectedRegion) return false;
-
     const matchesSearch = search
       ? activity.name.toLowerCase().includes(search.toLowerCase())
       : true;
-
     const matchesDate = selectedDate
-      ? activity.date === format(selectedDate, "yyyy-MM-dd")
+      ? activity.activities.some(
+          (item) => item.date === format(selectedDate, "yyyy-MM-dd")
+        )
       : true;
-
     return matchesSearch && matchesDate;
   });
+
+  // Status-based lists:
+  const openActivities = baseFiltered.filter(
+    (act) =>
+      !act.completed && act.activities.every((item) => item.promoters === 0)
+  );
+  const inProgressActivities = baseFiltered.filter(
+    (act) => !act.completed && act.activities.some((item) => item.promoters > 0)
+  );
+  const completedActivities = baseFiltered.filter((act) => act.completed);
 
   return (
     <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
@@ -91,23 +97,37 @@ export default function TabsWithFilters({ selectedRegion }) {
 
       <TabsContent value="open">
         <div className="mt-4 space-y-4">
-          {filteredActivities.length > 0 ? (
-            filteredActivities.map((activity) => (
+          {openActivities.length > 0 ? (
+            openActivities.map((activity) => (
               <ActivityCard key={activity.id} activityDetails={activity} />
             ))
           ) : (
-            <p className="text-sm text-gray-500">No activities found.</p>
+            <p className="text-sm text-gray-500">No open activities.</p>
           )}
         </div>
       </TabsContent>
 
       <TabsContent value="progress">
-        <div className="mt-4 text-sm text-gray-500">No activities found.</div>
+        <div className="mt-4 space-y-4">
+          {inProgressActivities.length > 0 ? (
+            inProgressActivities.map((activity) => (
+              <ActivityCard key={activity.id} activityDetails={activity} />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No activities in progress.</p>
+          )}
+        </div>
       </TabsContent>
 
       <TabsContent value="completed">
-        <div className="mt-4 text-sm text-gray-500">
-          No activities found.
+        <div className="mt-4 space-y-4">
+          {completedActivities.length > 0 ? (
+            completedActivities.map((activity) => (
+              <ActivityCard key={activity.id} activityDetails={activity} />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No completed activities.</p>
+          )}
         </div>
       </TabsContent>
     </Tabs>

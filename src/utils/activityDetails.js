@@ -1,4 +1,4 @@
-export const schools = [
+export const activityDetails = [
   {
     id: 1,
     name: "NEW GARDENS PRIMARY",

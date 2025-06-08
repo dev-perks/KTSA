@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Calendar } from "../ui/calendar";
-import { schools } from "../../utils/schools";
-import SchoolCard from "./SchoolCard";
+import { activityDetails } from "../../utils/activityDetails";
+import ActivityCard from "./ActivityCard";
 import { format } from "date-fns";
 import {
   Popover,
@@ -17,15 +17,15 @@ export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const filteredSchools = schools.filter((school) => {
-    if (school.region !== selectedRegion) return false;
+  const filteredActivities = activityDetails.filter((activity) => {
+    if (activity.region !== selectedRegion) return false;
 
     const matchesSearch = search
-      ? school.name.toLowerCase().includes(search.toLowerCase())
+      ? activity.name.toLowerCase().includes(search.toLowerCase())
       : true;
 
     const matchesDate = selectedDate
-      ? school.date === format(selectedDate, "yyyy-MM-dd")
+      ? activity.date === format(selectedDate, "yyyy-MM-dd")
       : true;
 
     return matchesSearch && matchesDate;
@@ -91,23 +91,23 @@ export default function TabsWithFilters({ selectedRegion }) {
 
       <TabsContent value="open">
         <div className="mt-4 space-y-4">
-          {filteredSchools.length > 0 ? (
-            filteredSchools.map((school) => (
-              <SchoolCard key={school.id} school={school} />
+          {filteredActivities.length > 0 ? (
+            filteredActivities.map((activity) => (
+              <ActivityCard key={activity.id} activityDetails={activity} />
             ))
           ) : (
-            <p className="text-sm text-gray-500">No schools found.</p>
+            <p className="text-sm text-gray-500">No activities found.</p>
           )}
         </div>
       </TabsContent>
 
       <TabsContent value="progress">
-        <div className="mt-4 text-sm text-gray-500">No progress items yet.</div>
+        <div className="mt-4 text-sm text-gray-500">No activities found.</div>
       </TabsContent>
 
       <TabsContent value="completed">
         <div className="mt-4 text-sm text-gray-500">
-          No completed items yet.
+          No activities found.
         </div>
       </TabsContent>
     </Tabs>

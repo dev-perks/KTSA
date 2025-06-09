@@ -1,10 +1,16 @@
 import React from "react";
 import { MapPin, ChevronDown } from "lucide-react";
 import { regionOptions } from "../../utils/regions";
+import AddActivity from "./AddActivity";
 
-export default function RegionFilterHeader({ selectedRegion, onRegionChange }) {
+export default function RegionFilterHeader({
+  selectedRegion,
+  onRegionChange,
+  onActivitySave,
+}) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-50 p-4 rounded-md max-w-3xl mx-auto shadow-sm gap-3">
+      {/* Region selector */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           School List
@@ -16,9 +22,9 @@ export default function RegionFilterHeader({ selectedRegion, onRegionChange }) {
             onChange={(e) => onRegionChange(e.target.value)}
             className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm text-gray-700"
           >
-            {regionOptions.map((region) => (
-              <option key={region.value} value={region.value}>
-                {region.label}
+            {regionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
@@ -26,9 +32,8 @@ export default function RegionFilterHeader({ selectedRegion, onRegionChange }) {
         </div>
       </div>
 
-      <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-full flex items-center shadow-md transition">
-        + Add Activity
-      </button>
+      {/* Pull in the new AddActivity component */}
+      <AddActivity initialRegion={selectedRegion} onSave={onActivitySave} />
     </div>
   );
 }

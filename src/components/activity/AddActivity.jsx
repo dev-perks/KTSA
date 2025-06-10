@@ -21,6 +21,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import AddPromoters from "./AddPromoters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+
 export default function AddActivity({ initialRegion, onSave }) {
   const [region, setRegion] = useState(initialRegion);
   const [school, setSchool] = useState("");
@@ -46,7 +55,12 @@ export default function AddActivity({ initialRegion, onSave }) {
       region,
       school,
       activityType,
-      sampling: { samplingDate, samplingHour, samplingMinute, samplingPromoters },
+      sampling: {
+        samplingDate,
+        samplingHour,
+        samplingMinute,
+        samplingPromoters,
+      },
       lunch: { lunchDate, lunchHour, lunchMinute, lunchPromoters },
       noOfKids,
       address,
@@ -56,6 +70,26 @@ export default function AddActivity({ initialRegion, onSave }) {
   const showSampling = activityType === "sampling" || activityType === "both";
   const showLunch = activityType === "lunch" || activityType === "both";
 
+  const [promoterModal, setPromoterModal] = useState({
+    open: false,
+    type: null,
+  });
+
+  const [samplingPromotersList, setSamplingPromotersList] = useState([]);
+  const [lunchPromotersList, setLunchPromotersList] = useState([]);
+
+  const allPromoters = [];
+
+  const openPromoterModal = (type) => setPromoterModal({ open: true, type });
+  const closePromoterModal = () =>
+    setPromoterModal({ open: false, type: null });
+
+  const handlePromoterSelect = (selected, type) => {
+    if (type === "sampling") setSamplingPromotersList(selected);
+    else if (type === "lunch") setLunchPromotersList(selected);
+    closePromoterModal();
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -64,13 +98,13 @@ export default function AddActivity({ initialRegion, onSave }) {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="fixed inset-0 sm:inset-auto sm:mx-auto sm:top-1/2 sm:left-1/2 transform sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:max-w-lg bg-gray-100 max-h-screen sm:rounded-lg overflow-y-auto">
+      <DialogContent className="bg-gray-100 flex flex-col justify-center items-center max-h-[90vh] sm:rounded-lg w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[50vw] 2xl:w-[40vw]">
         <DialogHeader>
-          <DialogTitle>Add Activity</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Add Activity</DialogTitle>
         </DialogHeader>
 
-        <div className="bg-white shadow rounded-lg mx-4 sm:mx-0">
-          <div className="px-4 pt-4 pb-4 max-h-[75vh] overflow-y-auto">
+        <div className="bg-white shadow rounded-lg mx-0 sm:mx-0">
+          <div className="px-4 pt-4 pb-4 max-h-[60vh] sm:max-h-[65vh] overflow-y-auto">
             <form
               id="activityForm"
               onSubmit={handleSubmit}
@@ -80,20 +114,19 @@ export default function AddActivity({ initialRegion, onSave }) {
               <div className="grid gap-1">
                 <Label htmlFor="region-select">Region</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <select
-                    id="region-select"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    className="appearance-none w-full pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 focus:ring-2 focus:ring-blue-500"
-                  >
-                    {regionOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
+                  <Select value={region} onValueChange={setRegion}>
+                    <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder="Select region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regionOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -101,37 +134,44 @@ export default function AddActivity({ initialRegion, onSave }) {
               <div className="grid gap-1">
                 <Label htmlFor="school-select">School Name</Label>
                 <div className="relative">
-                  <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <select
-                    id="school-select"
-                    value={school}
-                    onChange={(e) => setSchool(e.target.value)}
-                    className="appearance-none w-full pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select school</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                  <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
+                  <Select value={school} onValueChange={setSchool}>
+                    <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder="Select school" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regionOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              {/* ── Activity Type Card (with nested cards) ── */}
+              {/* Activity Type Card */}
               <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                {/* Selector */}
+                {/* Activity Type */}
                 <div className="grid gap-1">
                   <Label htmlFor="activity-type">Activity Type</Label>
                   <div className="relative">
-                    <ListTodo className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <select
-                      id="activity-type"
+                    <ListTodo className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
+                    <Select
                       value={activityType}
-                      onChange={(e) => setActivityType(e.target.value)}
-                      className="appearance-none w-full pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 focus:ring-2 focus:ring-blue-500"
+                      onValueChange={setActivityType}
                     >
-                      <option value="sampling">School Sampling</option>
-                      <option value="lunch">Lunch Box Check</option>
-                      <option value="both">Both</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                      <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
+                        <SelectValue placeholder="Select activity type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sampling">
+                          School Sampling
+                        </SelectItem>
+                        <SelectItem value="lunch">Lunch Box Check</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -150,23 +190,25 @@ export default function AddActivity({ initialRegion, onSave }) {
                         className="flex-1 min-w-[120px]"
                       />
                       <Clock className="w-4 h-4 text-gray-500" />
-                      <Input
-                        type="text"
-                        value={samplingHour}
-                        onChange={(e) => setSamplingHour(e.target.value)}
-                        maxLength={2}
-                        placeholder="HH"
-                        className="w-12 text-center"
-                      />
-                      <span>:</span>
-                      <Input
-                        type="text"
-                        value={samplingMinute}
-                        onChange={(e) => setSamplingMinute(e.target.value)}
-                        maxLength={2}
-                        placeholder="MM"
-                        className="w-12 text-center"
-                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="text"
+                          value={samplingHour}
+                          onChange={(e) => setSamplingHour(e.target.value)}
+                          maxLength={2}
+                          placeholder="HH"
+                          className="w-12 text-center"
+                        />
+                        <span>:</span>
+                        <Input
+                          type="text"
+                          value={samplingMinute}
+                          onChange={(e) => setSamplingMinute(e.target.value)}
+                          maxLength={2}
+                          placeholder="MM"
+                          className="w-12 text-center"
+                        />
+                      </div>
                     </div>
                     <hr className="border-gray-200 my-2" />
                     <div className="flex items-center justify-between">
@@ -176,9 +218,7 @@ export default function AddActivity({ initialRegion, onSave }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          setSamplingPromoters((count) => count + 1)
-                        }
+                        onClick={() => openPromoterModal("sampling")}
                       >
                         Add
                       </Button>
@@ -201,23 +241,25 @@ export default function AddActivity({ initialRegion, onSave }) {
                         className="flex-1 min-w-[120px]"
                       />
                       <Clock className="w-4 h-4 text-gray-500" />
-                      <Input
-                        type="text"
-                        value={lunchHour}
-                        onChange={(e) => setLunchHour(e.target.value)}
-                        maxLength={2}
-                        placeholder="HH"
-                        className="w-12 text-center"
-                      />
-                      <span>:</span>
-                      <Input
-                        type="text"
-                        value={lunchMinute}
-                        onChange={(e) => setLunchMinute(e.target.value)}
-                        maxLength={2}
-                        placeholder="MM"
-                        className="w-12 text-center"
-                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="text"
+                          value={lunchHour}
+                          onChange={(e) => setLunchHour(e.target.value)}
+                          maxLength={2}
+                          placeholder="HH"
+                          className="w-12 text-center"
+                        />
+                        <span>:</span>
+                        <Input
+                          type="text"
+                          value={lunchMinute}
+                          onChange={(e) => setLunchMinute(e.target.value)}
+                          maxLength={2}
+                          placeholder="MM"
+                          className="w-12 text-center"
+                        />
+                      </div>
                     </div>
                     <hr className="border-gray-200 my-2" />
                     <div className="flex items-center justify-between">
@@ -227,7 +269,7 @@ export default function AddActivity({ initialRegion, onSave }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLunchPromoters((c) => c + 1)}
+                        onClick={() => openPromoterModal("lunch")}
                       >
                         Add
                       </Button>
@@ -292,7 +334,7 @@ export default function AddActivity({ initialRegion, onSave }) {
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 md:gap-4 sm:gap-0 sm:px-4 w-full">
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
@@ -300,6 +342,19 @@ export default function AddActivity({ initialRegion, onSave }) {
             Save
           </Button>
         </DialogFooter>
+
+        <AddPromoters
+          isOpen={promoterModal.open}
+          type={promoterModal.type}
+          allPromoters={allPromoters}
+          alreadySelected={
+            promoterModal.type === "sampling"
+              ? samplingPromotersList
+              : lunchPromotersList
+          }
+          onSelect={handlePromoterSelect}
+          onClose={closePromoterModal}
+        />
       </DialogContent>
     </Dialog>
   );

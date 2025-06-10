@@ -4,6 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+* {
+  box-sizing: border-box;
+}
+
 :root {
   --font-inter: "Inter", sans-serif;
   --radius: 0.625rem;
@@ -120,6 +124,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

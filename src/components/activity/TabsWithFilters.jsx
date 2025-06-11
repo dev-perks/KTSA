@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Calendar } from "../ui/calendar";
@@ -8,10 +8,29 @@ import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
+
+  const getActivity = async (region) => {
+    if (!region) {
+      toast.error("Please select any region");
+      return;
+    }
+
+    const response = await axios.get(`${BASE_URL}/admin/activities`, {
+      withCredentials: true,
+    });
+
+    console.log("Response Data : ", response.data);
+  };
+  useEffect(() => {
+    getActivity(selectedRegion);
+  }, [selectedRegion]);
 
   // Base filter: region, search term, and date (matches any activity date)
   const baseFiltered = activityDetails.filter((activity) => {

@@ -3,13 +3,16 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { Toaster } from "react-hot-toast";
-import { BrowserRouter as Router,} from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
+import { UserProvider } from "./context/userContext";
 
 createRoot(document.getElementById("root")).render(
   <Router>
     <StrictMode>
-      <Toaster />
-      <App />
+      <UserProvider>
+        <Toaster />
+        <App />
+      </UserProvider>
     </StrictMode>
   </Router>
 );

@@ -1,9 +1,16 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { useContext, useState } from "react";
+import axios from "axios";
+import { UserContext } from "@/context/userContext";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function KelloggsLogin() {
   const navigate = useNavigate();
+  const { setUserData } = useContext(UserContext);
+  const [error, setError] = useState("");
 
   const {
     register,
@@ -11,14 +18,45 @@ export default function KelloggsLogin() {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const { email, password } = data;
 
-    if (email === "admin@example.com" && password === "admin@123") {
-      toast.success("Login successful!");
-      setTimeout(() => navigate("/activity"), 1000);
-    } else {
-      toast.error("Invalid email or password");
+    if (!email || !password) {
+      setError("Please enter both username and password.");
+      return;
+    }
+
+    try {
+      //console.log(VITE_BASE_URL);
+      const response = await axios.post(
+        `${BASE_URL}/auth/login`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true, // this is mandatory for sending cookies
+        }
+      );
+
+      if (!response) {
+        toast.error("Something went wrong");
+        return;
+      }
+
+      if (response.status === 200) {
+        // console.log("Response data : ",response.data.user);
+        const data = response.data.user;
+        setUserData(data);
+        toast.success("Login success");
+        setTimeout(() => navigate("/activity"), 1000);
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        setError("Invalid credentials. Please try again.");
+      } else {
+        setError("An error occurred during login.");
+      }
     }
   };
 

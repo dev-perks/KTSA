@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
+import ActivityCardDetails from "./ActivityCardDetails";
 
 export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
@@ -36,6 +37,8 @@ export default function TabsWithFilters({ selectedRegion }) {
     (act) => !act.completed && act.activities.some((item) => item.promoters > 0)
   );
   const completedActivities = baseFiltered.filter((act) => act.completed);
+
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
   return (
     <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
@@ -99,7 +102,11 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {openActivities.length > 0 ? (
             openActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No open activities.</p>
@@ -111,7 +118,11 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {inProgressActivities.length > 0 ? (
             inProgressActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No activities in progress.</p>
@@ -123,13 +134,24 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {completedActivities.length > 0 ? (
             completedActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No completed activities.</p>
           )}
         </div>
       </TabsContent>
+
+      {/* Modal Component */}
+      <ActivityCardDetails
+        open={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
+        activity={selectedActivity}
+      />
     </Tabs>
   );
 }

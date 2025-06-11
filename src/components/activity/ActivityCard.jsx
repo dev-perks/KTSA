@@ -2,9 +2,11 @@ import React from "react";
 import { MapPin, Users, CalendarClock, GraduationCap } from "lucide-react";
 import { FaRegCircle, FaRegDotCircle, FaRegCheckCircle } from "react-icons/fa";
 
-export default function ActivityCard({ activityDetails }) {
+export default function ActivityCard({ activityDetails, onClick }) {
   const isCompleted = activityDetails.completed;
-  const isInProgress = !isCompleted && activityDetails.activities.some(item => item.promoters > 0);
+  const isInProgress =
+    !isCompleted &&
+    activityDetails.activities.some((item) => item.promoters > 0);
 
   const StatusIcon = isCompleted
     ? FaRegCheckCircle
@@ -18,7 +20,10 @@ export default function ActivityCard({ activityDetails }) {
     : "text-gray-600";
 
   return (
-    <div className="border rounded-md p-4 shadow-sm bg-white space-y-3">
+    <div
+      className="border rounded-md p-4 shadow-sm bg-white space-y-3 cursor-pointer hover:shadow-md transition"
+      onClick={onClick}
+    >
       {/* Header: School Name and status icon */}
       <div className="flex justify-between items-center">
         <h3 className="font-semibold text-black flex items-center gap-2">

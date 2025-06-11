@@ -21,7 +21,7 @@ export default function RegionFilterHeader({
       {/* Region selector */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          School List
+          Region List
         </label>
         <div className="relative w-52 max-w-xs">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />

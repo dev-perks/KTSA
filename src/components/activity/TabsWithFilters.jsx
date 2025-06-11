@@ -56,6 +56,8 @@ export default function TabsWithFilters({ selectedRegion }) {
   );
   const completedActivities = baseFiltered.filter((act) => act.completed);
 
+  const [selectedActivity, setSelectedActivity] = useState(null);
+
   return (
     <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
       <TabsList className="w-full flex justify-start border-b border-gray-200">
@@ -118,7 +120,11 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {openActivities.length > 0 ? (
             openActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No open activities.</p>
@@ -130,7 +136,11 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {inProgressActivities.length > 0 ? (
             inProgressActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No activities in progress.</p>
@@ -142,13 +152,24 @@ export default function TabsWithFilters({ selectedRegion }) {
         <div className="mt-4 space-y-4">
           {completedActivities.length > 0 ? (
             completedActivities.map((activity) => (
-              <ActivityCard key={activity.id} activityDetails={activity} />
+              <ActivityCard
+                key={activity.id}
+                activityDetails={activity}
+                onClick={() => setSelectedActivity(activity)}
+              />
             ))
           ) : (
             <p className="text-sm text-gray-500">No completed activities.</p>
           )}
         </div>
       </TabsContent>
+
+      {/* Modal Component */}
+      <ActivityCardDetails
+        open={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
+        activity={selectedActivity}
+      />
     </Tabs>
   );
 }

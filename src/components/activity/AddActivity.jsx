@@ -5,6 +5,8 @@ import {
   Calendar as CalendarIcon,
   ListTodo,
   Clock,
+  Map,
+  Loader,
 } from "lucide-react";
 import { regionOptions } from "../../utils/regions";
 import {
@@ -36,9 +38,11 @@ export default function AddActivity({ initialRegion, onSave }) {
     schoolId: "",
     activityType: "",
     samplingDate: "",
-    samplingTime: "",
+    samplingHour: "00",
+    samplingMinute: "00",
     lunchboxDate: "",
-    lunchboxTime: "",
+    lunchboxHour: "00",
+    lunchboxMinute: "00",
     address: "",
     noOfKids: "",
     latitude: "",
@@ -49,9 +53,10 @@ export default function AddActivity({ initialRegion, onSave }) {
     lunchboxPromoterId: null,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [schools, setSchool] = useState([]);
+  const [schools, setSchools] = useState([]);
   const [promoters, setPromoters] = useState([]);
   const [error, setError] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
 
   const showSampling =
     formData.activityType === "SCHOOL_SAMPLING" ||
@@ -70,7 +75,7 @@ export default function AddActivity({ initialRegion, onSave }) {
           withCredentials: true,
         });
 
-        setSchool(response.data.schools);
+        setSchools(response.data.schools);
         setPromoters(response1.data.promoters);
       } catch (err) {
         if (err.response && err.response.status === 401) {
@@ -91,6 +96,29 @@ export default function AddActivity({ initialRegion, onSave }) {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleLocationClick = () => {
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData({
+            ...formData,
+            latitude: position.coords.latitude.toString(),
+            longitude: position.coords.longitude.toString(),
+          });
+          setIsLocating(false);
+        },
+        (error) => {
+          toast.error("Error getting location: " + error.message);
+          setIsLocating(false);
+        }
+      );
+    } else {
+      toast.error("Geolocation is not supported by this browser.");
+      setIsLocating(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -109,28 +137,40 @@ export default function AddActivity({ initialRegion, onSave }) {
         noOfLunchboxesIssued: formData.noOfLunchboxesIssued,
         samplingPromoterId: formData.samplingPromoterId,
         lunchboxPromoterId: formData.lunchboxPromoterId,
-        samplingDate: showSampling ? formData.samplingDate : undefined,
-        samplingTime: showSampling
-          ? `${formData.samplingHour}:${formData.samplingMinute}`
-          : undefined,
-        lunchboxDate: showLunch ? formData.lunchboxDate : undefined,
-        lunchboxTime: showLunch
-          ? `${formData.lunchboxHour}:${formData.lunchboxMinute}`
-          : undefined,
+        samplingDate:
+          showSampling && formData.samplingDate
+            ? formData.samplingDate
+            : undefined,
+        samplingTime:
+          showSampling && formData.samplingHour && formData.samplingMinute
+            ? `${formData.samplingHour}:${formData.samplingMinute}`
+            : undefined,
+        lunchboxDate:
+          showLunch && formData.lunchboxDate
+            ? formData.lunchboxDate
+            : undefined,
+        lunchboxTime:
+          showLunch && formData.lunchboxHour && formData.lunchboxMinute
+            ? `${formData.lunchboxHour}:${formData.lunchboxMinute}`
+            : undefined,
       };
 
-      const response = await axios.post(`${BASE_URL}/admin/activities`, requestData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.post(
+        `${BASE_URL}/admin/activities`,
+        requestData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       toast.success(response.data.message || "Activity created successfully");
       onSave(response.data.activity);
     } catch (error) {
       console.error("Error creating activity:", error);
-      //toast.error(error.response?.data?.message || "Failed to create activity");
+      toast.error(error.response?.data?.message || "Failed to create activity");
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +236,6 @@ export default function AddActivity({ initialRegion, onSave }) {
                       <SelectValue placeholder="Select school" />
                     </SelectTrigger>
                     <SelectContent>
-                      {/* You'll need to fetch schools based on selected region */}
                       {schools?.map((school) => (
                         <SelectItem key={school.id} value={String(school.id)}>
                           {school.name}
@@ -295,7 +334,6 @@ export default function AddActivity({ initialRegion, onSave }) {
                           <SelectValue placeholder="Select promoter" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* Fetch and map promoters here */}
                           {promoters.length === 0 ? (
                             <SelectItem disabled value="">
                               No promoters available
@@ -376,7 +414,6 @@ export default function AddActivity({ initialRegion, onSave }) {
                           <SelectValue placeholder="Select promoter" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* Fetch and map promoters here */}
                           {promoters.length === 0 ? (
                             <SelectItem disabled value="">
                               No promoters available
@@ -411,17 +448,29 @@ export default function AddActivity({ initialRegion, onSave }) {
                 />
               </div>
 
-              {/* Address */}
+              {/* Location Button */}
               <div className="grid gap-1">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Enter address"
-                  className="w-full"
-                />
+                <Label htmlFor="location-btn">Location</Label>
+                <Button
+                  id="location-btn"
+                  variant="outline"
+                  type="button"
+                  onClick={handleLocationClick}
+                  className="flex items-center gap-2 justify-center"
+                  disabled={isLocating}
+                >
+                  {isLocating ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4 text-blue-500" />
+                      Locating...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="w-4 h-4 text-blue-500" />
+                      Pick Location
+                    </>
+                  )}
+                </Button>
               </div>
 
               {/* Location Coordinates */}
@@ -446,6 +495,19 @@ export default function AddActivity({ initialRegion, onSave }) {
                     placeholder="Enter longitude"
                   />
                 </div>
+              </div>
+
+              {/* Address */}
+              <div className="grid gap-1">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Enter address"
+                  className="w-full"
+                />
               </div>
             </form>
           </div>

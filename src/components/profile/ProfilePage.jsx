@@ -1,8 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, {  useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { UserContext } from "@/context/userContext";
 import Spinner from "../ui/Spinner";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -22,23 +21,16 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { userData, logout } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!userData?.id) {
-      setError("User not authenticated");
-      setLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
 
     const fetchProfile = async () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `${BASE_URL}/auth/users/id/${userData.id}`,
+          `${BASE_URL}/auth/users/profile`,
           {
             withCredentials: true,
             signal: controller.signal,
@@ -60,11 +52,11 @@ export default function ProfilePage() {
     fetchProfile();
 
     return () => controller.abort();
-  }, [userData?.id]);
+  }, []);
 
   const handleLogout = async () => {
     try {
-      await logout();
+      //await logout();
       navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);

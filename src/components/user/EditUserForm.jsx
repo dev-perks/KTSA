@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-export default function EditUserForm({ userData, onSuccess, onDelete }) {
+export default function EditUserForm({ userData, onSuccess }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -62,28 +62,6 @@ export default function EditUserForm({ userData, onSuccess, onDelete }) {
       toast.error(`${error.message}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteClick = async () => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        setLoading(true);
-        await onDelete();
-        toast({
-          title: "Success",
-          description: "User deleted successfully",
-          variant: "default",
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.message || "Failed to delete user",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -190,15 +168,6 @@ export default function EditUserForm({ userData, onSuccess, onDelete }) {
       />
 
       <div className="flex justify-center space-x-4">
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={handleDeleteClick}
-          className="flex items-center gap-2 w-[140px]"
-          disabled={loading}
-        >
-          <Trash2 size={16} /> Delete
-        </Button>
         <Button
           type="submit"
           className="flex items-center gap-2 w-[140px] bg-blue-600 hover:bg-blue-700"

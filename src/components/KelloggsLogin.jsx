@@ -1,15 +1,13 @@
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { useContext, useState } from "react";
+import {  useState } from "react";
 import axios from "axios";
-import { UserContext } from "@/context/userContext";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function KelloggsLogin() {
   const navigate = useNavigate();
-  const { setUserData } = useContext(UserContext);
   const [error, setError] = useState("");
 
   const {
@@ -46,8 +44,6 @@ export default function KelloggsLogin() {
 
       if (response.status === 200) {
         // console.log("Response data : ",response.data.user);
-        const data = response.data.user;
-        setUserData(data);
         toast.success("Login success");
         setTimeout(() => navigate("/activity"), 1000);
       }

@@ -1,73 +1,40 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import AddSchool from "./AddSchool";
-
-const schoolsData = [
-  {
-    id: 1,
-    name: "Maratopele primary school",
-    region: "Limpopo",
-    address: "123 Education St, Polokwane",
-    contact: "015 123 4567",
-  },
-  {
-    id: 2,
-    name: "Mangakane lerate primary",
-    region: "Limpopo",
-    address: "456 Learning Ave, Mankweng",
-    contact: "015 234 5678",
-  },
-  {
-    id: 3,
-    name: "Bokgobelo Mphakanyane primary school",
-    region: "Limpopo",
-    address: "789 Knowledge Rd, Seshego",
-    contact: "015 345 6789",
-  },
-  {
-    id: 4,
-    name: "Nnatile primary school",
-    region: "Limpopo",
-    address: "101 Wisdom Blvd, Tzaneen",
-    contact: "015 456 7890",
-  },
-  {
-    id: 5,
-    name: "Venus primary school",
-    region: "Limpopo",
-    address: "202 Scholar Lane, Bela-Bela",
-    contact: "015 567 8901",
-  },
-  {
-    id: 6,
-    name: "Rantshu primary school",
-    region: "Limpopo",
-    address: "303 Campus Dr, Thohoyandou",
-    contact: "015 678 9012",
-  },
-  {
-    id: 7,
-    name: "Highberry primary",
-    region: "Limpopo",
-    address: "404 Academy St, Modimolle",
-    contact: "015 789 0123",
-  },
-];
+import axios from "axios";
+import toast from "react-hot-toast";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+import EditSchool from "./EditSchool";
 
 export default function SchoolMain() {
-  const [schools, setSchools] = useState(schoolsData);
+  const [schools, setSchools] = useState([]); // Changed from null to empty array
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/admin/schools`, {
+          // Fixed typo in endpoint (schools)
+          withCredentials: true,
+        });
+
+        setSchools(res.data.schools || []); // Ensure we always set an array
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          console.error("Error fetching schools:", err); // Changed from "users" to "schools"
+          setError(err.response?.data?.message || "Failed to load schools"); // Changed from "users" to "schools"
+        }
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleEditClick = (school) => {
     setSelectedSchool(school);
@@ -79,20 +46,38 @@ export default function SchoolMain() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    setSchools(schools.filter((school) => school.id !== selectedSchool.id));
-    setIsDeleteDialogOpen(false);
-    setSelectedSchool(null);
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`${BASE_URL}/admin/schools/${selectedSchool.id}`, {
+        // Changed from users to schools
+        withCredentials: true,
+      });
+      setSchools(schools.filter((u) => u.id !== selectedSchool.id));
+      toast.success("School deleted successfully"); // Changed from "User" to "School"
+    } catch (err) {
+      console.error("Error deleting school:", err); // Changed from "user" to "school"
+      toast.error("Failed to delete school"); // Changed from "user" to "school"
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setSelectedSchool(null);
+    }
   };
+
+  const filteredSchools = schools.filter((s) => {
+    return (
+      // Added return statement
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.address && s.address.toLowerCase().includes(search.toLowerCase())) ||
+      (s.region && s.region.toLowerCase().includes(search.toLowerCase()))
+    );
+  });
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">
-            School Management
-          </h1>
+          <h1 className="text-2xl font-semibold">School Management</h1>
         </div>
         <Button
           onClick={() => {
@@ -120,11 +105,8 @@ export default function SchoolMain() {
 
       {/* Schools List */}
       <div className="space-y-4">
-        {schools
-          .filter((school) =>
-            school.name.toLowerCase().includes(search.toLowerCase())
-          )
-          .map((school) => (
+        {filteredSchools.length > 0 ? (
+          filteredSchools.map((school) => (
             <div
               key={school.id}
               className="p-5 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
@@ -171,7 +153,7 @@ export default function SchoolMain() {
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                         />
                       </svg>
-                      {school.contact}
+                      {school.contactDetail}
                     </div>
                     <div className="flex items-center">
                       <svg
@@ -211,25 +193,45 @@ export default function SchoolMain() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        ) : (
+          <div className="p-5 bg-white rounded-lg shadow-sm border border-gray-100 text-center text-gray-500">
+            No school found
+          </div>
+        )}
       </div>
 
       {/* Edit/Add School Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-full h-[590px] sm:max-w-[450px] rounded-lg ">
-          <DialogHeader className="h-[5px]">
-            <DialogTitle className="text-xl -mb-[300px]  font-semibold  text-gray-800 ">
-              {selectedSchool ? "Edit School Details" : "Add New School"}
+        <DialogContent className="w-full h-[590px] sm:max-w-[450px] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-gray-800">
+              {selectedSchool ? "Edit School" : "Add New School"}
             </DialogTitle>
           </DialogHeader>
-          <div className="py-">
-            <AddSchool
-              initialData={selectedSchool || {}}
-              onSuccess={() => {
-                setIsModalOpen(false);
-                setSelectedSchool(null);
-              }}
-            />
+          <div className="py-4">
+            {selectedSchool ? (
+              <EditSchool
+                initialData={selectedSchool}
+                onSuccess={() => {
+                  setIsModalOpen(false);
+                  setSelectedSchool(null);
+                  // Add refetch logic here
+                }}
+                onDeleteSuccess={() => {
+                  setIsModalOpen(false);
+                  setSelectedSchool(null);
+                  // Add refetch logic here
+                }}
+              />
+            ) : (
+              <AddSchool
+                onSuccess={() => {
+                  setIsModalOpen(false);
+                  // Add refetch logic here
+                }}
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

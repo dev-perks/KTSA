@@ -2,92 +2,147 @@ import React, { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Calendar } from "../ui/calendar";
-import { activityDetails } from "../../utils/activityDetails";
-import ActivityCard from "./ActivityCard";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import ActivityCard from "./ActivityCard";
 import ActivityCardDetails from "./ActivityCardDetails";
+
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function TabsWithFilters({ selectedRegion }) {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
-  const getActivity = async (region) => {
+  const getActivities = async (region) => {
     if (!region) {
-      toast.error("Please select any region");
+      toast.error("Please select a region");
       return;
     }
 
-    const response = await axios.get(`${BASE_URL}/admin/activities`, {
-      withCredentials: true,
-    });
+    setLoading(true);
+    try {
+      const response = await axios.get(`${BASE_URL}/admin/activities`, {
+        withCredentials: true,
+      });
 
-    console.log("Response Data : ", response.data);
+      setActivities(response.data || []);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch activities"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => {
-    getActivity(selectedRegion);
+    getActivities(selectedRegion);
   }, [selectedRegion]);
 
-  // Base filter: region, search term, and date (matches any activity date)
-  const baseFiltered = activityDetails.filter((activity) => {
-    if (activity.region !== selectedRegion) return false;
-    const matchesSearch = search
-      ? activity.name.toLowerCase().includes(search.toLowerCase())
-      : true;
-    const matchesDate = selectedDate
-      ? activity.activities.some(
-          (item) => item.date === format(selectedDate, "yyyy-MM-dd")
-        )
-      : true;
-    return matchesSearch && matchesDate;
-  });
+  const filterActivitiesByStatus = (status) => {
+    return activities.filter((activity) => {
+      // Filter by region first
+      if (activity.region !== selectedRegion) return false;
 
-  // Status-based lists:
-  const openActivities = baseFiltered.filter(
-    (act) =>
-      !act.completed && act.activities.every((item) => item.promoters === 0)
-  );
-  const inProgressActivities = baseFiltered.filter(
-    (act) => !act.completed && act.activities.some((item) => item.promoters > 0)
-  );
-  const completedActivities = baseFiltered.filter((act) => act.completed);
+      // Filter by search term
+      const matchesSearch = search
+        ? activity.school?.name?.toLowerCase().includes(search.toLowerCase()) ||
+          activity.address?.toLowerCase().includes(search.toLowerCase())
+        : true;
 
-  const [selectedActivity, setSelectedActivity] = useState(null);
+      // Filter by date
+      const matchesDate = selectedDate
+        ? (activity.samplingDate &&
+            format(parseISO(activity.samplingDate), "yyyy-MM-dd") ===
+              format(selectedDate, "yyyy-MM-dd")) ||
+          (activity.lunchboxDate &&
+            format(parseISO(activity.lunchboxDate), "yyyy-MM-dd") ===
+              format(selectedDate, "yyyy-MM-dd"))
+        : true;
+
+      if (!matchesSearch || !matchesDate) return false;
+
+      // Filter by status
+      switch (status) {
+        case "open":
+          return (
+            !activity.sampleSubmitted &&
+            !activity.lunchboxSubmitted &&
+            !activity.samplingPromoter &&
+            !activity.lunchboxPromoter
+          );
+
+        case "progress":
+          return (
+            (!activity.sampleSubmitted || !activity.lunchboxSubmitted) &&
+            (activity.samplingPromoter || activity.lunchboxPromoter)
+          );
+
+        case "completed":
+          return activity.sampleSubmitted && activity.lunchboxSubmitted;
+
+        default:
+          return true;
+      }
+    });
+  };
+
+  const openActivities = filterActivitiesByStatus("open");
+  const inProgressActivities = filterActivitiesByStatus("progress");
+  const completedActivities = filterActivitiesByStatus("completed");
+
+  const handleRefresh = () => {
+    getActivities(selectedRegion);
+  };
 
   return (
     <Tabs defaultValue="open" className="w-full max-w-3xl mx-auto mt-6">
-      <TabsList className="w-full flex justify-start border-b border-gray-200">
-        <TabsTrigger
-          value="open"
-          className="relative px-4 py-2 text-sm font-medium text-gray-700 data-[state=active]:text-black data-[state=active]:font-semibold"
+      <div className="flex justify-between items-center mb-4">
+        <TabsList className="flex justify-start border-b border-gray-200">
+          <TabsTrigger
+            value="open"
+            className="relative px-4 py-2 text-sm font-medium text-gray-700 data-[state=active]:text-black data-[state=active]:font-semibold"
+          >
+            Open
+            <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+          </TabsTrigger>
+          <TabsTrigger
+            value="progress"
+            className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
+          >
+            In Progress
+            <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+          </TabsTrigger>
+          <TabsTrigger
+            value="completed"
+            className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
+          >
+            Completed
+            <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
+          </TabsTrigger>
+        </TabsList>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={loading}
         >
-          Open
-          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
-        </TabsTrigger>
-        <TabsTrigger
-          value="progress"
-          className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
-        >
-          In Progress
-          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
-        </TabsTrigger>
-        <TabsTrigger
-          value="completed"
-          className="relative px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:font-semibold"
-        >
-          Completed
-          <span className="absolute bottom-0 left-0 h-[2px] w-full bg-blue-500 data-[state=active]:block hidden" />
-        </TabsTrigger>
-      </TabsList>
+          Refresh
+        </Button>
+      </div>
 
       <div className="flex gap-2 mt-4">
         <Input
-          placeholder="Search"
+          placeholder="Search by school or address"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full"
@@ -117,59 +172,73 @@ export default function TabsWithFilters({ selectedRegion }) {
         </Popover>
       </div>
 
-      <TabsContent value="open">
-        <div className="mt-4 space-y-4">
-          {openActivities.length > 0 ? (
-            openActivities.map((activity) => (
-              <ActivityCard
-                key={activity.id}
-                activityDetails={activity}
-                onClick={() => setSelectedActivity(activity)}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No open activities.</p>
-          )}
+      {loading ? (
+        <div className="mt-8 text-center text-gray-500">
+          Loading activities...
         </div>
-      </TabsContent>
+      ) : (
+        <>
+          <TabsContent value="open">
+            <div className="mt-4 space-y-4">
+              {openActivities.length > 0 ? (
+                openActivities.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    onClick={() => setSelectedActivity(activity)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No open activities found.
+                </p>
+              )}
+            </div>
+          </TabsContent>
 
-      <TabsContent value="progress">
-        <div className="mt-4 space-y-4">
-          {inProgressActivities.length > 0 ? (
-            inProgressActivities.map((activity) => (
-              <ActivityCard
-                key={activity.id}
-                activityDetails={activity}
-                onClick={() => setSelectedActivity(activity)}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No activities in progress.</p>
-          )}
-        </div>
-      </TabsContent>
+          <TabsContent value="progress">
+            <div className="mt-4 space-y-4">
+              {inProgressActivities.length > 0 ? (
+                inProgressActivities.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    onClick={() => setSelectedActivity(activity)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No activities in progress.
+                </p>
+              )}
+            </div>
+          </TabsContent>
 
-      <TabsContent value="completed">
-        <div className="mt-4 space-y-4">
-          {completedActivities.length > 0 ? (
-            completedActivities.map((activity) => (
-              <ActivityCard
-                key={activity.id}
-                activityDetails={activity}
-                onClick={() => setSelectedActivity(activity)}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No completed activities.</p>
-          )}
-        </div>
-      </TabsContent>
+          <TabsContent value="completed">
+            <div className="mt-4 space-y-4">
+              {completedActivities.length > 0 ? (
+                completedActivities.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    onClick={() => setSelectedActivity(activity)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No completed activities.
+                </p>
+              )}
+            </div>
+          </TabsContent>
+        </>
+      )}
 
-      {/* Modal Component */}
       <ActivityCardDetails
         open={!!selectedActivity}
         onClose={() => setSelectedActivity(null)}
         activity={selectedActivity}
+        onActivityUpdated={handleRefresh}
       />
     </Tabs>
   );

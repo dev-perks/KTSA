@@ -46,18 +46,16 @@ export default function UserMain() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto min-h-screen">
+    <div className="w-full max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col justify-center sm:flex-row sm:items-center sm:justify-between mb-6 bg-blue-50 p-4 rounded-md sm:min-h-[92px] min-h-[140px] ">
-        <div>
-          <h1 className="text-2xl font-semibold">Users</h1>
-        </div>
+      <div className="flex flex-col justify-center sm:flex-row sm:items-center sm:justify-between mb-6 bg-blue-50 p-4 rounded-md sm:min-h-[92px] min-h-[140px] gap-y-4 sm:gap-y-0">
+        <h1 className="text-2xl font-semibold">Users</h1>
         <Button
           onClick={() => {
             setSelectedUser(null);
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 mt-4 sm:mt-0"
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2"
         >
           <Plus size={16} /> Add User
         </Button>
@@ -83,7 +81,7 @@ export default function UserMain() {
           .map((user) => (
             <div
               key={user.id}
-              className="p-5 bg-white rounded-md shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+              className="p-4 bg-white rounded-md shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 {/* user info */}
@@ -122,14 +120,14 @@ export default function UserMain() {
 
       {/* Add/Edit User Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-full sm:max-w-[450px] mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto rounded-md">
+        <DialogContent className="w-full sm:max-w-[450px] mx-auto max-h-[90vh] overflow-y-auto rounded-md">
           <DialogHeader>
-            <DialogTitle className="text-xl -mb-[300px] font-semibold  text-gray-800">
+            <DialogTitle className="text-center text-lg sm:text-xl">
               {selectedUser ? "Edit User Details" : "Add New User"}
             </DialogTitle>
             <DialogClose asChild></DialogClose>
           </DialogHeader>
-          <div className="py-4">
+          <div className="">
             <AddUser
               initialData={selectedUser || {}}
               onSuccess={() => {

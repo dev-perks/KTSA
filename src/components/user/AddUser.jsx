@@ -40,7 +40,7 @@ export default function AddUser({ initialData = {}, onSuccess, onDelete }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-md mx-auto bg-white p-6 mt-6 rounded-md border shadow-sm"
+      className="max-w-md mx-auto bg-white p-6 rounded-md border shadow-sm"
     >
       {/* Role */}
       <label className="block mb-2 text-sm font-medium text-gray-700">

@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const fieldClass = "w-full border border-gray-200 rounded px-3 py-2 bg-gray-50";
 
   const handleLogout = () => {
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   return (

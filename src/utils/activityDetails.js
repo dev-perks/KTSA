@@ -30,7 +30,7 @@ export const activityDetails = [
         name: "School Sampling",
         date: "2025-05-29",
         time: "11:30 AM",
-        promoters: 2,
+        promoters: 0,
       },
       {
         name: "Lunch Box Check",

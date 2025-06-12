@@ -1,29 +1,24 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
-import { Trash2, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 
 export default function AddSchool({ initialData, onSuccess }) {
-  const [formData, setFormData] = useState(initialData || {
-    schoolName: "",
-    address: "",
-    contactDetail: "",
-    region: ""
+  // guard against null
+  const safeInitial = initialData ?? {};
+  const isEdit = Boolean(safeInitial.id);
+
+  const [formData, setFormData] = useState({
+    name: safeInitial.name || "",
+    address: safeInitial.address || "",
+    contact: safeInitial.contact || "",
+    region: safeInitial.region || "",
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) =>
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleUpdate = () => {
-    console.log("Updated data:", formData);
-    // send to backend here
-    onSuccess();
-  };
-
-  const handleDelete = () => {
-    console.log("Deleted school:", formData.schoolName);
-    // perform delete action here
-    onSuccess();
+  const handleSubmit = () => {
+    onSuccess(formData);
   };
 
   return (
@@ -31,8 +26,8 @@ export default function AddSchool({ initialData, onSuccess }) {
       <label className="block mb-2 text-sm font-medium text-gray-700">School Name</label>
       <input
         type="text"
-        name="schoolName"
-        value={formData.schoolName}
+        name="name"
+        value={formData.name}
         onChange={handleChange}
         className="w-full bg-gray-100 p-2 rounded-md mb-4 outline-none"
       />
@@ -49,8 +44,8 @@ export default function AddSchool({ initialData, onSuccess }) {
       <label className="block mb-2 text-sm font-medium text-gray-700">Contact Detail</label>
       <input
         type="text"
-        name="contactDetail"
-        value={formData.contactDetail}
+        name="contact"
+        value={formData.contact}
         onChange={handleChange}
         className="w-full bg-gray-100 p-2 rounded-md mb-4 outline-none"
       />
@@ -64,22 +59,13 @@ export default function AddSchool({ initialData, onSuccess }) {
         className="w-full bg-gray-100 p-2 rounded-md mb-6 outline-none"
       />
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-0">
+      <div className="flex flex-col items-center">
         <Button
-          variant="destructive"
-          onClick={handleDelete}
-          className="flex items-center justify-center gap-2 w-full sm:w-[140px]"
-        >
-          <Trash2 size={16} /> Delete
-        </Button>
-
-        <Button
-          variant="default"
-          onClick={handleUpdate}
+          onClick={handleSubmit}
           className="flex items-center justify-center gap-2 w-full sm:w-[140px] bg-blue-600 hover:bg-blue-700"
         >
-          <RefreshCcw size={16} /> {initialData ? 'Update' : 'Create'}
+          <RefreshCcw size={16} />
+          {isEdit ? "Update" : "Create"}
         </Button>
       </div>
     </div>

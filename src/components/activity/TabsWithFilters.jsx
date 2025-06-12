@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { CalendarIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import ActivityCardDetails from "./ActivityCardDetails";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function TabsWithFilters({ selectedRegion }) {

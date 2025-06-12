@@ -1,33 +1,50 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { User, Plus, Search, Pencil, Trash2, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "../ui/dialog";
-import AddUser from "./AddUser";
+import { User, Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import AddUser from "./AddUserForm";
+import axios from "axios";
+import toast from "react-hot-toast";
+import AddUserForm from "./AddUserForm";
+import EditUserForm from "./EditUserForm";
 
-const usersData = [
-  { id: 1, name: "Mkululi Clifford Dumile", role: "Promoter" },
-  { id: 2, name: "Lubabalo Mnweba", role: "Promoter" },
-  { id: 3, name: "Masonwabe Mlatha", role: "Promoter" },
-  { id: 4, name: "Sesthu Dumil", role: "Promoter" },
-  { id: 5, name: "Vusumzi Mjandana", role: "Promoter" },
-  { id: 6, name: "Ashley Thambiran", role: "Manager" },
-  { id: 7, name: "Sivatho", role: "Promoter" },
-  { id: 8, name: "Sihle Sikontya", role: "Promoter" },
-];
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function UserMain() {
-  const [users, setUsers] = useState(usersData);
+  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${BASE_URL}/auth/users`, {
+          withCredentials: true,
+          signal: controller.signal,
+        });
+        setUsers(res.data.users);
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          console.error("Error fetching users:", err);
+          setError(err.response?.data?.message || "Failed to load users");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+
+    return () => controller.abort();
+  }, []);
 
   const handleEdit = (user) => {
     setSelectedUser(user);
@@ -39,11 +56,49 @@ export default function UserMain() {
     setIsDeleteOpen(true);
   };
 
-  const confirmDelete = () => {
-    setUsers(users.filter((u) => u.id !== selectedUser.id));
-    setIsDeleteOpen(false);
-    setSelectedUser(null);
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`${BASE_URL}/auth/users/${selectedUser.id}`, {
+        withCredentials: true,
+      });
+      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      toast.success("User deleted successfully");
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      toast.error("Failed to delete user");
+    } finally {
+      setIsDeleteOpen(false);
+      setSelectedUser(null);
+    }
   };
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      (u.role && u.role.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen flex flex-col items-center justify-center">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button
+          onClick={() => window.location.reload()}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -78,9 +133,8 @@ export default function UserMain() {
 
       {/* User List */}
       <div className="space-y-4">
-        {users
-          .filter((u) => u.name.toLowerCase().includes(search.toLowerCase()))
-          .map((user) => (
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
             <div
               key={user.id}
               className="p-5 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
@@ -117,31 +171,44 @@ export default function UserMain() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        ) : (
+          <div className="p-5 bg-white rounded-lg shadow-sm border border-gray-100 text-center text-gray-500">
+            No users found
+          </div>
+        )}
       </div>
 
       {/* Add/Edit User Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-full sm:max-w-[450px] mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto rounded-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl -mb-[300px] font-semibold  text-gray-800">
-              {selectedUser ? "Edit User Details" : "Add New User"}
-            </DialogTitle>
-            <DialogClose asChild></DialogClose>
-          </DialogHeader>
-          <div className="py-4">
-            <AddUser
-              initialData={selectedUser || {}}
-              onSuccess={() => {
-                setIsModalOpen(false);
-                setSelectedUser(null);
-              }}
-              onDelete={confirmDelete}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {selectedUser ? "Edit User" : "Add New User"}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUser ? (
+              <EditUserForm
+                userData={selectedUser}
+                onSuccess={() => {
+                  setIsModalOpen(false);
+                  setSelectedUser(null);
+                  // Refresh your user list
+                }}
+                onDelete={confirmDelete}
+              />
+            ) : (
+              <AddUserForm
+                onSuccess={() => {
+                  setIsModalOpen(false);
+                  // Refresh your user list
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
       {/* Delete Confirmation */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent className="w-full max-w-sm sm:max-w-[425px] mx-auto my-4 sm:my-8 max-h-[90vh] overflow-y-auto rounded-lg">

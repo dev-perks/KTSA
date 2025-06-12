@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import RegionFilterHeader from "./RegionFilterHeader";
 import TabsWithFilters from "./TabsWithFilters";
-import { regionOptions } from "../../utils/regions";
+
 import axios from "axios";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 

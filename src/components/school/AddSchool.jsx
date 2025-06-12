@@ -14,9 +14,8 @@ export default function AddSchool({ onSuccess }) {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) =>
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async () => {
     if (
@@ -56,6 +55,8 @@ export default function AddSchool({ onSuccess }) {
         type="text"
         name="name"
         value={formData.name}
+        name="name"
+        value={formData.name}
         onChange={handleChange}
         className="w-full bg-gray-100 p-2 rounded-md mb-4 outline-none"
         disabled={isLoading}
@@ -78,8 +79,8 @@ export default function AddSchool({ onSuccess }) {
       </label>
       <input
         type="text"
-        name="contactDetail"
-        value={formData.contactDetail}
+        name="contact"
+        value={formData.contact}
         onChange={handleChange}
         className="w-full bg-gray-100 p-2 rounded-md mb-4 outline-none"
         disabled={isLoading}
@@ -109,3 +110,4 @@ export default function AddSchool({ onSuccess }) {
     </div>
   );
 }
+

@@ -139,9 +139,9 @@ export default function AddActivity({ initialRegion, onSave }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-full flex items-center shadow-md transition">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 flex items-center">
           + Add Activity
-        </button>
+        </Button>
       </DialogTrigger>
 
       <DialogContent className="bg-gray-100 flex flex-col justify-center items-center max-h-[90vh] sm:rounded-lg w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[50vw] 2xl:w-[40vw]">

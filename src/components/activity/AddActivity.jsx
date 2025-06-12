@@ -5,6 +5,8 @@ import {
   Calendar as CalendarIcon,
   ListTodo,
   Clock,
+  Map,
+  Loader,
 } from "lucide-react";
 import { regionOptions } from "../../utils/regions";
 import {
@@ -28,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import toast from "react-hot-toast";
 
-export default function AddActivity({ initialRegion, onSave }) {
+export default function AddActivity({ initialRegion }) {
   const [region, setRegion] = useState(initialRegion);
   const [school, setSchool] = useState("");
   const [activityType, setActivityType] = useState("both");
@@ -47,23 +50,68 @@ export default function AddActivity({ initialRegion, onSave }) {
   // Others
   const [noOfKids, setNoOfKids] = useState(0);
   const [address, setAddress] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
 
-  const handleSubmit = (e) => {
+  // Function to fetch address from geolocation
+  const [isLocating, setIsLocating] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+
+  // Function to fetch address from latitude and longitude
+  const fetchAddressFromLocation = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        const addressParts = [];
+        if (data.address.road) addressParts.push(data.address.road);
+        if (data.address.suburb) addressParts.push(data.address.suburb);
+        if (data.address.city) addressParts.push(data.address.city);
+        if (data.address.state) addressParts.push(data.address.state);
+        if (data.address.postcode) addressParts.push(data.address.postcode);
+        if (data.address.country) addressParts.push(data.address.country);
+
+        const fullAddress = addressParts.join(", ");
+        setAddress(fullAddress);
+        setLatitude(latitude.toString());
+        setLongitude(longitude.toString());
+        toast.success("Location fetched successfully!");
+      } else {
+        toast.error("Failed to retrieve address details.");
+      }
+    } catch (error) {
+      console.error("Error fetching address:", error);
+      toast.error("Unable to retrieve address. Please try again.");
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  // Function to handle location button click
+  const handleLocationClick = async (e) => {
     e.preventDefault();
-    onSave({
-      region,
-      school,
-      activityType,
-      sampling: {
-        samplingDate,
-        samplingHour,
-        samplingMinute,
-        samplingPromoters,
-      },
-      lunch: { lunchDate, lunchHour, lunchMinute, lunchPromoters },
-      noOfKids,
-      address,
-    });
+    setIsLocating(true);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          await fetchAddressFromLocation(latitude, longitude);
+        },
+        (error) => {
+          console.error("Error fetching location:", error);
+          toast.error("Unable to retrieve location. Please try again.");
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      toast.error("Geolocation is not supported by your browser.");
+      setIsLocating(false);
+    }
   };
 
   const showSampling = activityType === "sampling" || activityType === "both";
@@ -106,7 +154,7 @@ export default function AddActivity({ initialRegion, onSave }) {
           <div className="px-4 pt-4 pb-4 max-h-[60vh] sm:max-h-[65vh] overflow-y-auto">
             <form
               id="activityForm"
-              onSubmit={handleSubmit}
+              // onSubmit={handleSubmit}
               className="grid gap-4"
             >
               {/* Region */}
@@ -306,6 +354,31 @@ export default function AddActivity({ initialRegion, onSave }) {
                 </div>
               </div>
 
+              {/* Location Button */}
+              <div className="grid gap-1">
+                <Label htmlFor="location-btn">Location</Label>
+                <Button
+                  id="location-btn"
+                  variant="outline"
+                  type="button"
+                  onClick={handleLocationClick}
+                  className="flex items-center gap-2 justify-center"
+                  disabled={isLocating}
+                >
+                  {isLocating ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4 text-blue-500" />
+                      Locating...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="w-4 h-4 text-blue-500" />
+                      Pick Location
+                    </>
+                  )}
+                </Button>
+              </div>
+
               {/* Address */}
               <div className="grid gap-1">
                 <Label htmlFor="address-input">Address</Label>
@@ -317,17 +390,62 @@ export default function AddActivity({ initialRegion, onSave }) {
                 />
               </div>
 
-              {/* Location */}
-              <div className="grid gap-1">
-                <Label htmlFor="location-btn">Location</Label>
+              {/* Location Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-1">
+                  <Label htmlFor="latitude-input">Latitude</Label>
+                  <Input
+                    id="latitude-input"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="Latitude"
+                    readOnly
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="longitude-input">Longitude</Label>
+                  <Input
+                    id="longitude-input"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="Longitude"
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
                 <Button
-                  id="location-btn"
-                  variant="outline"
+                  variant="secondary"
+                  type="button"
+                  onClick={() => setShowMap((prev) => !prev)}
                   className="flex items-center gap-2 justify-center"
+                  disabled={!latitude || !longitude}
                 >
-                  <MapPin className="w-4 h-4 text-blue-500" />
-                  Pick Location
+                  {showMap ? (
+                    <>
+                      <Map className="w-4 h-4 text-blue-500" />
+                      Hide Map
+                    </>
+                  ) : (
+                    <>
+                      <Map className="w-4 h-4 text-blue-500" />
+                      Show Map
+                    </>
+                  )}
                 </Button>
+
+                {showMap && latitude && longitude && (
+                  <div className="w-full h-64 rounded-lg overflow-hidden border">
+                    <iframe
+                      title="School Location"
+                      className="w-full h-full"
+                      src={`https://www.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`}
+                      allowFullScreen
+                      loading="lazy"
+                    ></iframe>
+                  </div>
+                )}
               </div>
             </form>
           </div>

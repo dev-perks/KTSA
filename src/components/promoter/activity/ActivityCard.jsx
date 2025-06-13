@@ -1,7 +1,6 @@
 // *ACTIVITY CARD*
 import React from "react";
 import { MapPin, Users, CalendarClock, GraduationCap } from "lucide-react";
-import { FaRegCircle, FaRegDotCircle, FaRegCheckCircle } from "react-icons/fa";
 
 export default function ActivityCard({ activityDetails, onClick }) {
   const isCompleted   = activityDetails.completed;
@@ -11,7 +10,7 @@ export default function ActivityCard({ activityDetails, onClick }) {
 
   return (
     <div
-      className="border rounded-md p-4 shadow-sm bg-white space-y-3 cursor-pointer hover:shadow-md transition"
+      className="border rounded-md p-4 shadow-sm bg-white space-y-3 cursor-pointer hover:shadow-md transition "
       onClick={onClick}
     >
       {/* Header: School Name and status icon */}

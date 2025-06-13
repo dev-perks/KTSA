@@ -19,6 +19,6 @@ export const navItems = [
   {
     label: "Profile",
     icon: User,
-    to: "/profile",
+    to: "/admin/profile",
   },
 ];

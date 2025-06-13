@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin, Users, CalendarClock, GraduationCap } from "lucide-react";
+import { FaRegCircle, FaRegDotCircle, FaRegCheckCircle } from "react-icons/fa";
 
 export default function ActivityCard({ activityDetails, onClick }) {
   const isSamplingCompleted = activityDetails.sampleSubmitted;

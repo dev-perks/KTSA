@@ -4,7 +4,7 @@ import { navItems } from "../utils/navItems";
 const BottomNavbar = () => (
   <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 shadow-md z-50">
     <div className="flex justify-around py-2">
-      {navItems.map(({ label, to }) => (
+      {navItems.map(({ label,icon: Icon, to }) => (
         <NavLink
           key={to}
           to={to}

@@ -8,6 +8,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import AddUserForm from "./AddUserForm";
 import EditUserForm from "./EditUserForm";
+import { refreshAccessToken } from "../../utils/refreshAccessToken.js";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -91,7 +92,15 @@ export default function UserMain() {
       <div className="w-full max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen flex flex-col items-center justify-center">
         <p className="text-red-500 mb-4">{error}</p>
         <Button
-          onClick={() => window.location.reload()}
+          onClick={async () => {
+            try {
+              await refreshAccessToken();
+              window.location.reload();
+            } catch {
+              alert("Session expired. Please log in again.");
+              window.location.href = "/login";
+            }
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           Retry

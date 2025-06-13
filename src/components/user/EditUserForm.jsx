@@ -43,7 +43,6 @@ export default function EditUserForm({ userData, onSuccess }) {
     try {
       // Prepare update data (exclude password if not changed)
       const updateData = { ...formData };
-      console.log("Updated user data : ", updateData);
       if (!updateData.password) {
         delete updateData.password;
       }

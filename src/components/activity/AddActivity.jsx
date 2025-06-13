@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MapPin,
   Home,
@@ -21,8 +21,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import AddPromoters from "./AddPromoters";
+import axios from "axios";
+import toast from "react-hot-toast";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 import {
   Select,
   SelectContent,
@@ -32,109 +33,110 @@ import {
 } from "../ui/select";
 import toast from "react-hot-toast";
 
-export default function AddActivity({ initialRegion }) {
-  const [region, setRegion] = useState(initialRegion);
-  const [school, setSchool] = useState("");
-  const [activityType, setActivityType] = useState("both");
-
-  // Sampling
-  const [samplingDate, setSamplingDate] = useState("");
-  const [samplingHour, setSamplingHour] = useState("00");
-  const [samplingMinute, setSamplingMinute] = useState("00");
-  const [samplingPromoters, setSamplingPromoters] = useState(0);
-  // Lunch
-  const [lunchDate, setLunchDate] = useState("");
-  const [lunchHour, setLunchHour] = useState("00");
-  const [lunchMinute, setLunchMinute] = useState("00");
-  const [lunchPromoters, setLunchPromoters] = useState(0);
-  // Others
-  const [noOfKids, setNoOfKids] = useState(0);
-  const [address, setAddress] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-
-  // Function to fetch address from geolocation
-  const [isLocating, setIsLocating] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-
-  // Function to fetch address from latitude and longitude
-  const fetchAddressFromLocation = async (latitude, longitude) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-      );
-      const data = await response.json();
-
-      if (response.ok) {
-        const addressParts = [];
-        if (data.address.road) addressParts.push(data.address.road);
-        if (data.address.suburb) addressParts.push(data.address.suburb);
-        if (data.address.city) addressParts.push(data.address.city);
-        if (data.address.state) addressParts.push(data.address.state);
-        if (data.address.postcode) addressParts.push(data.address.postcode);
-        if (data.address.country) addressParts.push(data.address.country);
-
-        const fullAddress = addressParts.join(", ");
-        setAddress(fullAddress);
-        setLatitude(latitude.toString());
-        setLongitude(longitude.toString());
-        toast.success("Location fetched successfully!");
-      } else {
-        toast.error("Failed to retrieve address details.");
-      }
-    } catch (error) {
-      console.error("Error fetching address:", error);
-      toast.error("Unable to retrieve address. Please try again.");
-    } finally {
-      setIsLocating(false);
-    }
-  };
-
-  // Function to handle location button click
-  const handleLocationClick = async (e) => {
-    e.preventDefault();
-    setIsLocating(true);
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          await fetchAddressFromLocation(latitude, longitude);
-        },
-        (error) => {
-          console.error("Error fetching location:", error);
-          toast.error("Unable to retrieve location. Please try again.");
-          setIsLocating(false);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      toast.error("Geolocation is not supported by your browser.");
-      setIsLocating(false);
-    }
-  };
-
-  const showSampling = activityType === "sampling" || activityType === "both";
-  const showLunch = activityType === "lunch" || activityType === "both";
-
-  const [promoterModal, setPromoterModal] = useState({
-    open: false,
-    type: null,
+export default function AddActivity({ initialRegion, onSave }) {
+  const [formData, setFormData] = useState({
+    region: initialRegion || "",
+    schoolId: "",
+    activityType: "",
+    samplingDate: "",
+    samplingTime: "",
+    lunchboxDate: "",
+    lunchboxTime: "",
+    address: "",
+    noOfKids: "",
+    latitude: "",
+    longitude: "",
+    noOfSampleIssued: "",
+    noOfLunchboxesIssued: "",
+    samplingPromoterId: null,
+    lunchboxPromoterId: null,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [schools, setSchool] = useState([]);
+  const [promoters, setPromoters] = useState([]);
+  const [error, setError] = useState("");
 
-  const [samplingPromotersList, setSamplingPromotersList] = useState([]);
-  const [lunchPromotersList, setLunchPromotersList] = useState([]);
+  const showSampling =
+    formData.activityType === "SCHOOL_SAMPLING" ||
+    formData.activityType === "BOTH";
+  const showLunch =
+    formData.activityType === "LUNCHBOX_CHECK" ||
+    formData.activityType === "BOTH";
 
-  const allPromoters = [];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}/admin/schools`, {
+          withCredentials: true,
+        });
+        const response1 = await axios.get(`${BASE_URL}/promoter/promoters`, {
+          withCredentials: true,
+        });
 
-  const openPromoterModal = (type) => setPromoterModal({ open: true, type });
-  const closePromoterModal = () =>
-    setPromoterModal({ open: false, type: null });
+        setSchool(response.data.schools);
+        setPromoters(response1.data.promoters);
+      } catch (err) {
+        if (err.response && err.response.status === 401) {
+          setError("Invalid credentials. Please try again.");
+        } else {
+          setError("An error occurred during login.");
+        }
+      }
+    };
+    fetchData();
+  }, []);
 
-  const handlePromoterSelect = (selected, type) => {
-    if (type === "sampling") setSamplingPromotersList(selected);
-    else if (type === "lunch") setLunchPromotersList(selected);
-    closePromoterModal();
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Prepare the request data
+      const requestData = {
+        activityType: formData.activityType,
+        region: formData.region,
+        schoolId: formData.schoolId,
+        address: formData.address,
+        noOfKids: Number(formData.noOfKids),
+        latitude: formData.latitude ? Number(formData.latitude) : undefined,
+        longitude: formData.longitude ? Number(formData.longitude) : undefined,
+        noOfSampleIssued: formData.noOfSampleIssued,
+        noOfLunchboxesIssued: formData.noOfLunchboxesIssued,
+        samplingPromoterId: formData.samplingPromoterId,
+        lunchboxPromoterId: formData.lunchboxPromoterId,
+        samplingDate: showSampling ? formData.samplingDate : undefined,
+        samplingTime: showSampling
+          ? `${formData.samplingHour}:${formData.samplingMinute}`
+          : undefined,
+        lunchboxDate: showLunch ? formData.lunchboxDate : undefined,
+        lunchboxTime: showLunch
+          ? `${formData.lunchboxHour}:${formData.lunchboxMinute}`
+          : undefined,
+      };
+
+      const response = await axios.post(`${BASE_URL}/admin/activities`, requestData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      toast.success(response.data.message || "Activity created successfully");
+      onSave(response.data.activity);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      //toast.error(error.response?.data?.message || "Failed to create activity");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -162,7 +164,12 @@ export default function AddActivity({ initialRegion }) {
                 <Label htmlFor="region-select">Region</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
-                  <Select value={region} onValueChange={setRegion}>
+                  <Select
+                    value={formData.region}
+                    onValueChange={(value) =>
+                      handleSelectChange("region", value)
+                    }
+                  >
                     <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
                       <SelectValue placeholder="Select region" />
                     </SelectTrigger>
@@ -182,14 +189,20 @@ export default function AddActivity({ initialRegion }) {
                 <Label htmlFor="school-select">School Name</Label>
                 <div className="relative">
                   <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
-                  <Select value={school} onValueChange={setSchool}>
+                  <Select
+                    value={formData.schoolId}
+                    onValueChange={(value) =>
+                      handleSelectChange("schoolId", value)
+                    }
+                  >
                     <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
                       <SelectValue placeholder="Select school" />
                     </SelectTrigger>
                     <SelectContent>
-                      {regionOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {/* You'll need to fetch schools based on selected region */}
+                      {schools?.map((school) => (
+                        <SelectItem key={school.id} value={String(school.id)}>
+                          {school.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -199,30 +212,33 @@ export default function AddActivity({ initialRegion }) {
 
               {/* Activity Type Card */}
               <div className="border border-gray-200 rounded-md p-4 space-y-4">
-                {/* Activity Type */}
                 <div className="grid gap-1">
                   <Label htmlFor="activity-type">Activity Type</Label>
                   <div className="relative">
                     <ListTodo className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
                     <Select
-                      value={activityType}
-                      onValueChange={setActivityType}
+                      value={formData.activityType}
+                      onValueChange={(value) =>
+                        handleSelectChange("activityType", value)
+                      }
                     >
                       <SelectTrigger className="pl-9 pr-8 py-2 border rounded-md bg-white text-sm text-gray-700 w-full focus:ring-2 focus:ring-blue-500">
                         <SelectValue placeholder="Select activity type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sampling">
+                        <SelectItem value="SCHOOL_SAMPLING">
                           School Sampling
                         </SelectItem>
-                        <SelectItem value="lunch">Lunch Box Check</SelectItem>
-                        <SelectItem value="both">Both</SelectItem>
+                        <SelectItem value="LUNCHBOX_CHECK">
+                          Lunch Box Check
+                        </SelectItem>
+                        <SelectItem value="BOTH">Both</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                {/* Nested: School Sampling */}
+                {/* School Sampling Section */}
                 {showSampling && (
                   <div className="border border-gray-200 rounded-md p-3">
                     <div className="text-sm font-medium text-gray-800 mb-2">
@@ -232,16 +248,18 @@ export default function AddActivity({ initialRegion }) {
                       <CalendarIcon className="w-4 h-4 text-gray-500" />
                       <Input
                         type="date"
-                        value={samplingDate}
-                        onChange={(e) => setSamplingDate(e.target.value)}
+                        name="samplingDate"
+                        value={formData.samplingDate}
+                        onChange={handleChange}
                         className="flex-1 min-w-[120px]"
                       />
                       <Clock className="w-4 h-4 text-gray-500" />
                       <div className="flex items-center gap-1">
                         <Input
                           type="text"
-                          value={samplingHour}
-                          onChange={(e) => setSamplingHour(e.target.value)}
+                          name="samplingHour"
+                          value={formData.samplingHour}
+                          onChange={handleChange}
                           maxLength={2}
                           placeholder="HH"
                           className="w-12 text-center"
@@ -249,31 +267,59 @@ export default function AddActivity({ initialRegion }) {
                         <span>:</span>
                         <Input
                           type="text"
-                          value={samplingMinute}
-                          onChange={(e) => setSamplingMinute(e.target.value)}
+                          name="samplingMinute"
+                          value={formData.samplingMinute}
+                          onChange={handleChange}
                           maxLength={2}
                           placeholder="MM"
                           className="w-12 text-center"
                         />
                       </div>
                     </div>
-                    <hr className="border-gray-200 my-2" />
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-gray-800">
-                        Promoters
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openPromoterModal("sampling")}
+                    <div className="grid gap-1">
+                      <Label>No of Samples Issued</Label>
+                      <Input
+                        type="text"
+                        name="noOfSampleIssued"
+                        value={formData.noOfSampleIssued}
+                        onChange={handleChange}
+                        placeholder="Enter number of samples"
+                      />
+                    </div>
+                    <div className="grid gap-1 mt-2">
+                      <Label>Sampling Promoter</Label>
+                      <Select
+                        value={formData.samplingPromoterId}
+                        onValueChange={(value) =>
+                          handleSelectChange("samplingPromoterId", value)
+                        }
                       >
-                        Add
-                      </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select promoter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Fetch and map promoters here */}
+                          {promoters.length === 0 ? (
+                            <SelectItem disabled value="">
+                              No promoters available
+                            </SelectItem>
+                          ) : (
+                            promoters.map((promoter) => (
+                              <SelectItem
+                                key={promoter.id}
+                                value={String(promoter.id)}
+                              >
+                                {promoter.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 )}
 
-                {/* Nested: Lunch Box Check */}
+                {/* Lunch Box Check Section */}
                 {showLunch && (
                   <div className="border border-gray-200 rounded-md p-3">
                     <div className="text-sm font-medium text-gray-800 mb-2">
@@ -283,16 +329,18 @@ export default function AddActivity({ initialRegion }) {
                       <CalendarIcon className="w-4 h-4 text-gray-500" />
                       <Input
                         type="date"
-                        value={lunchDate}
-                        onChange={(e) => setLunchDate(e.target.value)}
+                        name="lunchboxDate"
+                        value={formData.lunchboxDate}
+                        onChange={handleChange}
                         className="flex-1 min-w-[120px]"
                       />
                       <Clock className="w-4 h-4 text-gray-500" />
                       <div className="flex items-center gap-1">
                         <Input
                           type="text"
-                          value={lunchHour}
-                          onChange={(e) => setLunchHour(e.target.value)}
+                          name="lunchboxHour"
+                          value={formData.lunchboxHour}
+                          onChange={handleChange}
                           maxLength={2}
                           placeholder="HH"
                           className="w-12 text-center"
@@ -300,26 +348,54 @@ export default function AddActivity({ initialRegion }) {
                         <span>:</span>
                         <Input
                           type="text"
-                          value={lunchMinute}
-                          onChange={(e) => setLunchMinute(e.target.value)}
+                          name="lunchboxMinute"
+                          value={formData.lunchboxMinute}
+                          onChange={handleChange}
                           maxLength={2}
                           placeholder="MM"
                           className="w-12 text-center"
                         />
                       </div>
                     </div>
-                    <hr className="border-gray-200 my-2" />
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-gray-800">
-                        Promoters
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openPromoterModal("lunch")}
+                    <div className="grid gap-1">
+                      <Label>No of Lunchboxes Issued</Label>
+                      <Input
+                        type="text"
+                        name="noOfLunchboxesIssued"
+                        value={formData.noOfLunchboxesIssued}
+                        onChange={handleChange}
+                        placeholder="Enter number of lunchboxes"
+                      />
+                    </div>
+                    <div className="grid gap-1 mt-2">
+                      <Label>Lunchbox Promoter</Label>
+                      <Select
+                        value={formData.lunchboxPromoterId}
+                        onValueChange={(value) =>
+                          handleSelectChange("lunchboxPromoterId", value)
+                        }
                       >
-                        Add
-                      </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select promoter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Fetch and map promoters here */}
+                          {promoters.length === 0 ? (
+                            <SelectItem disabled value="">
+                              No promoters available
+                            </SelectItem>
+                          ) : (
+                            promoters.map((promoter) => (
+                              <SelectItem
+                                key={promoter.id}
+                                value={String(promoter.id)}
+                              >
+                                {promoter.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 )}
@@ -327,125 +403,52 @@ export default function AddActivity({ initialRegion }) {
 
               {/* No of Kids */}
               <div className="grid gap-1">
-                <Label htmlFor="kids-input">No of Kids</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setNoOfKids((k) => Math.max(0, k - 1))}
-                  >
-                    –
-                  </Button>
-                  <Input
-                    id="kids-input"
-                    type="number"
-                    min={0}
-                    value={noOfKids}
-                    onChange={(e) => setNoOfKids(Number(e.target.value))}
-                    className="w-20 text-center py-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setNoOfKids((k) => k + 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              {/* Location Button */}
-              <div className="grid gap-1">
-                <Label htmlFor="location-btn">Location</Label>
-                <Button
-                  id="location-btn"
-                  variant="outline"
-                  type="button"
-                  onClick={handleLocationClick}
-                  className="flex items-center gap-2 justify-center"
-                  disabled={isLocating}
-                >
-                  {isLocating ? (
-                    <>
-                      <Loader className="animate-spin w-4 h-4 text-blue-500" />
-                      Locating...
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="w-4 h-4 text-blue-500" />
-                      Pick Location
-                    </>
-                  )}
-                </Button>
+                <Label htmlFor="noOfKids">No of Kids</Label>
+                <Input
+                  type="number"
+                  name="noOfKids"
+                  value={formData.noOfKids}
+                  onChange={handleChange}
+                  min={0}
+                  className="w-full"
+                />
               </div>
 
               {/* Address */}
               <div className="grid gap-1">
-                <Label htmlFor="address-input">Address</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
-                  id="address-input"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
                   placeholder="Enter address"
+                  className="w-full"
                 />
               </div>
 
-              {/* Location Fields */}
+              {/* Location Coordinates */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-1">
-                  <Label htmlFor="latitude-input">Latitude</Label>
+                  <Label htmlFor="latitude">Latitude</Label>
                   <Input
-                    id="latitude-input"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    placeholder="Latitude"
-                    readOnly
+                    type="text"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={handleChange}
+                    placeholder="Enter latitude"
                   />
                 </div>
                 <div className="grid gap-1">
-                  <Label htmlFor="longitude-input">Longitude</Label>
+                  <Label htmlFor="longitude">Longitude</Label>
                   <Input
-                    id="longitude-input"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    placeholder="Longitude"
-                    readOnly
+                    type="text"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={handleChange}
+                    placeholder="Enter longitude"
                   />
                 </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => setShowMap((prev) => !prev)}
-                  className="flex items-center gap-2 justify-center"
-                  disabled={!latitude || !longitude}
-                >
-                  {showMap ? (
-                    <>
-                      <Map className="w-4 h-4 text-blue-500" />
-                      Hide Map
-                    </>
-                  ) : (
-                    <>
-                      <Map className="w-4 h-4 text-blue-500" />
-                      Show Map
-                    </>
-                  )}
-                </Button>
-
-                {showMap && latitude && longitude && (
-                  <div className="w-full h-64 rounded-lg overflow-hidden border">
-                    <iframe
-                      title="School Location"
-                      className="w-full h-full"
-                      src={`https://www.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`}
-                      allowFullScreen
-                      loading="lazy"
-                    ></iframe>
-                  </div>
-                )}
               </div>
             </form>
           </div>
@@ -455,23 +458,10 @@ export default function AddActivity({ initialRegion }) {
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button type="submit" form="activityForm">
-            Save
+          <Button type="submit" form="activityForm" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
-
-        <AddPromoters
-          isOpen={promoterModal.open}
-          type={promoterModal.type}
-          allPromoters={allPromoters}
-          alreadySelected={
-            promoterModal.type === "sampling"
-              ? samplingPromotersList
-              : lunchPromotersList
-          }
-          onSelect={handlePromoterSelect}
-          onClose={closePromoterModal}
-        />
       </DialogContent>
     </Dialog>
   );

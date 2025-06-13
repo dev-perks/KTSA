@@ -1,12 +1,13 @@
 import React from "react";
 import { MapPin, Users, CalendarClock, GraduationCap } from "lucide-react";
 import { FaRegCircle, FaRegDotCircle, FaRegCheckCircle } from "react-icons/fa";
+import { format, parseISO } from "date-fns";
 
-export default function ActivityCard({ activityDetails, onClick }) {
-  const isCompleted = activityDetails.completed;
-  const isInProgress =
-    !isCompleted &&
-    activityDetails.activities.some((item) => item.promoters > 0);
+export default function ActivityCard({ activity, onClick }) {
+  const isCompleted = activity.sampleSubmitted && activity.lunchboxSubmitted;
+  const isInProgress = 
+    (!activity.sampleSubmitted || !activity.lunchboxSubmitted) && 
+    (activity.samplingPromoterId || activity.lunchboxPromoterId);
 
   const StatusIcon = isCompleted
     ? FaRegCheckCircle
@@ -19,36 +20,60 @@ export default function ActivityCard({ activityDetails, onClick }) {
     ? "text-yellow-500"
     : "text-gray-600";
 
+  const getActivityItems = () => {
+    const items = [];
+    
+    if (activity.activityType === 'SCHOOL_SAMPLING' || activity.activityType === 'BOTH') {
+      items.push({
+        name: 'School Sampling',
+        date: activity.samplingDate ? format(parseISO(activity.samplingDate), 'MMM dd, yyyy') : 'Not scheduled',
+        time: activity.samplingTime || '',
+        promoters: activity.samplingPromoterId ? 1 : 0,
+        completed: activity.sampleSubmitted
+      });
+    }
+    
+    if (activity.activityType === 'LUNCHBOX_CHECK' || activity.activityType === 'BOTH') {
+      items.push({
+        name: 'Lunchbox Check',
+        date: activity.lunchboxDate ? format(parseISO(activity.lunchboxDate), 'MMM dd, yyyy') : 'Not scheduled',
+        time: activity.lunchboxTime || '',
+        promoters: activity.lunchboxPromoterId ? 1 : 0,
+        completed: activity.lunchboxSubmitted
+      });
+    }
+    
+    return items;
+  };
+
   return (
     <div
       className="border rounded-md p-4 shadow-sm bg-white space-y-3 cursor-pointer hover:shadow-md transition"
       onClick={onClick}
     >
-      {/* Header: School Name and status icon */}
       <div className="flex justify-between items-center">
         <h3 className="font-semibold text-black flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-blue-700" />
-          {activityDetails.name}
+          {activity.school?.name || 'No school assigned'}
         </h3>
         <StatusIcon className={`w-5 h-5 ${statusColor}`} />
       </div>
 
-      {/* Region & City */}
       <p className="text-sm text-gray-600 flex items-center gap-2">
         <MapPin className="w-4 h-4 text-gray-500" />
-        {activityDetails.region} - {activityDetails.city}
+        {activity.region} - {activity.address}
       </p>
 
-      {/* Separator line */}
       <hr className="border-gray-200" />
 
-      {/* Each activity with its own date/time and promoter count */}
-      {activityDetails.activities.map((item) => (
+      {getActivityItems().map((item) => (
         <div
           key={item.name}
           className="grid grid-cols-[120px_152px_32px] items-center justify-between"
         >
-          <span className="text-sm text-gray-800">{item.name}</span>
+          <span className={`text-sm ${item.completed ? 'text-green-600' : 'text-gray-800'}`}>
+            {item.name}
+          </span>
           <span className="flex items-center gap-2 text-xs text-gray-600">
             <CalendarClock className="w-4 h-4" />
             {item.date} {item.time}

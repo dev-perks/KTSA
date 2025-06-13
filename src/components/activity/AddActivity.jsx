@@ -193,7 +193,7 @@ export default function AddActivity({ initialRegion, onSave }) {
           <div className="px-4 pt-4 pb-4 max-h-[60vh] sm:max-h-[65vh] overflow-y-auto">
             <form
               id="activityForm"
-              onSubmit={handleSubmit}
+              // onSubmit={handleSubmit}
               className="grid gap-4"
             >
               {/* Region */}

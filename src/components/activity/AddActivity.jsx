@@ -168,6 +168,7 @@ export default function AddActivity({ initialRegion, onSave }) {
 
       toast.success(response.data.message || "Activity created successfully");
       onSave(response.data.activity);
+      onclose();
     } catch (error) {
       console.error("Error creating activity:", error);
       toast.error(error.response?.data?.message || "Failed to create activity");

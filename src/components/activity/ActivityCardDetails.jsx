@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, GraduationCap, Clock } from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function ActivityCardDetails({ open, onClose, activity }) {
@@ -63,7 +64,7 @@ export default function ActivityCardDetails({ open, onClose, activity }) {
         },
         { withCredentials: true }
       );
-      alert("Activity updated successfully!");
+      toast.success("Activity updated successfully!");
       onClose();
     } catch (err) {
       console.error("Update failed", err);

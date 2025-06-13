@@ -64,7 +64,7 @@ export default function Activity() {
       {/* Region / Search */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Select value={region} onValueChange={setRegion}>
-          <SelectTrigger className=" sm:w-48">
+          <SelectTrigger className="sm:w-48 [&>svg]:hidden">
             <SelectValue placeholder="All regions" />
           </SelectTrigger>
           <SelectContent>
@@ -125,7 +125,7 @@ export default function Activity() {
         </TabsList>
 
         <TabsContent value="assigned">
-          <div className="mt-4 space-y-4 max-h-[60vh] ">
+          <div className="mt-4 space-y-4 ">
             {assignedItems.length ? (
               assignedItems.map((item) => (
                 <ActivityCard
@@ -143,7 +143,7 @@ export default function Activity() {
         </TabsContent>
 
         <TabsContent value="completed">
-          <div className="mt-4 space-y-4 max-h-[60vh] ">
+          <div className="mt-4 space-y-4">
             {completedItems.length ? (
               completedItems.map((item) => (
                 <ActivityCard

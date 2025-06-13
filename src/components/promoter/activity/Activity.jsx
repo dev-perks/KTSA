@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
 import {
   Select,
@@ -11,32 +11,53 @@ import { Input } from "../../ui/input";
 import { Popover, PopoverTrigger, PopoverContent } from "../../ui/popover";
 import { Calendar } from "../../ui/calendar";
 import { Button } from "../../ui/button";
-import ActivityCard from "./ActivityCard"; // nii hai
+import ActivityCard from "./ActivityCard";
 import PromoterDetails from "./PromoterDetails";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { activityDetails } from "./activityDetails"; // nii hai
+import axios from "axios";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function Activity() {
   const [region, setRegion] = useState();
+  const [activities, setActivities] = useState([]);
   const [tab, setTab] = useState("assigned");
   const [search, setSearch] = useState("");
   const [date, setDate] = useState();
   const [selectedActivity, setSelectedActivity] = useState(null);
 
-  const regions = Array.from(new Set(activityDetails.map((a) => a.region)));
-  const filtered = activityDetails.filter((item) => {
+  useEffect(() => {
+    const fetchedData = async () => {
+      const response = await axios.get(`${BASE_URL}/promoter/activity`, {
+        withCredentials: true,
+      });
+      const data = response.data.activities;
+      console.log("Data : ", data);
+      setActivities(data);
+    };
+    fetchedData();
+  }, []);
+
+  const regions = Array.from(new Set(activities.map((a) => a.region)));
+  
+  const filtered = activities.filter((item) => {
     const matchRegion = region ? item.region === region : true;
-    const matchSearch = item.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchSearch = item.school.name.toLowerCase().includes(search.toLowerCase());
     const matchDate = date
-      ? item.activities.some((a) => a.date === date.toISOString().slice(0, 10))
+      ? (item.samplingDate && new Date(item.samplingDate).toISOString().slice(0, 10) === date.toISOString().slice(0, 10)) ||
+        (item.lunchboxDate && new Date(item.lunchboxDate).toISOString().slice(0, 10) === date.toISOString().slice(0, 10))
       : true;
     return matchRegion && matchSearch && matchDate;
   });
 
-  const assignedItems = filtered.filter((item) => !item.completed);
-  const completedItems = filtered.filter((item) => item.completed);
+  const assignedItems = filtered.filter((item) => 
+    (item.activityType === "SCHOOL_SAMPLING" && !item.sampleSubmitted) ||
+    (item.activityType === "LUNCHBOX_CHECK" && !item.lunchboxSubmitted)
+  );
+  
+  const completedItems = filtered.filter((item) => 
+    (item.activityType === "SCHOOL_SAMPLING" && item.sampleSubmitted) ||
+    (item.activityType === "LUNCHBOX_CHECK" && item.lunchboxSubmitted)
+  );
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4 lg:px-0 space-y-6">
@@ -54,35 +75,34 @@ export default function Activity() {
             ))}
           </SelectContent>
         </Select>
-        </div>
+      </div>
 
-        <div className="flex sm:flex-row gap-2 w-full sm:w-auto">
-          <Input
-            placeholder="Search by school"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1"
-          />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className=" sm:w-[200px] justify-start text-left"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? date.toLocaleDateString() : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        
+      <div className="flex sm:flex-row gap-2 w-full sm:w-auto">
+        <Input
+          placeholder="Search by school"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1"
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className=" sm:w-[200px] justify-start text-left"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? date.toLocaleDateString() : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Tabs */}

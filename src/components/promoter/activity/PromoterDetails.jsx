@@ -15,29 +15,35 @@ import "react-toastify/dist/ReactToastify.css";
 export default function PromoterDetails({ open, onClose, activity }) {
   if (!activity) return null;
 
-  const { name, city, region, activities: rawActivities = [] } = activity;
   const [items, setItems] = useState([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewIndex, setReviewIndex] = useState(null);
 
   useEffect(() => {
-    setItems(
-      rawActivities.map((a) => ({
-        ...a,
-        sampleCount: "",
+    if (activity) {
+      const activityItem = {
+        ...activity,
+        sampleCount: activity.noOfSampleIssued || "",
         attachments: [],
         fileTypes: [],
         previewUrls: [],
-        uploaded: false,
-      }))
-    );
-  }, [rawActivities]);
+        uploaded: activity.sampleSubmitted || activity.lunchboxSubmitted || false,
+      };
+      setItems([activityItem]);
+    }
+  }, [activity]);
 
   const handleUpload = (idx) => {
     const copy = [...items];
     copy[idx].uploaded = true;
     setItems(copy);
     toast.success("Upload successful!");
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "--/--/----";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB");
   };
 
   return (
@@ -63,13 +69,13 @@ export default function PromoterDetails({ open, onClose, activity }) {
             <div className="bg-white shadow rounded-lg p-6 space-y-5">
               <h3 className="font-medium text-gray-900 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-blue-700" />
-                {name}
+                {activity.school?.name || "Unknown School"}
               </h3>
               {[
-                ["Region", region],
-                ["City", city],
-                ["No of Kids", "N/A"],
-                ["Location", "Lat: –, Long: –"],
+                ["Region", activity.region],
+                ["Address", activity.address],
+                ["No of Kids", activity.noOfKids || "N/A"],
+                ["Location", `Lat: ${activity.latitude || '-'}, Long: ${activity.longitude || '-'}`],
               ].map(([label, val]) => (
                 <p key={label} className="text-sm text-muted-foreground">
                   <span className="font-medium text-black">{label}:</span> {val}
@@ -77,37 +83,46 @@ export default function PromoterDetails({ open, onClose, activity }) {
               ))}
             </div>
 
-            {/* Sampling Sections */}
+            {/* Activity Section */}
             {items.map((item, idx) => (
               <div
                 key={idx}
                 className="bg-white shadow rounded-lg p-6 flex flex-col space-y-6 w-full"
               >
                 <div className="text-sm font-medium text-gray-800">
-                  {item.name}
+                  {activity.activityType === "SCHOOL_SAMPLING" 
+                    ? "School Sampling" 
+                    : "Lunchbox Check"}
                 </div>
 
                 {/* Date & Time */}
-                <div className="flex flex-col sm:flex-row justify-between sm:gap-0 gap-4 ">
-                  
+                <div className="flex flex-col sm:flex-row justify-between sm:gap-0 gap-4">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4  text-gray-500 " />
-                    <span className="w-[140px] text-center text-sm p-[5px] border border-gray-300 rounded ">
-                      {item.date
-                        ? new Date(item.date).toLocaleDateString("en-GB")
-                        : "--/--/----"}
+                    <CalendarIcon className="w-4 h-4 text-gray-500" />
+                    <span className="w-[140px] text-center text-sm p-[5px] border border-gray-300 rounded">
+                      {formatDate(
+                        activity.activityType === "SCHOOL_SAMPLING" 
+                          ? activity.samplingDate 
+                          : activity.lunchboxDate
+                      )}
                     </span>
                   </div>
-                  <div className="flex items-center  gap-2">
+                  <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
-                    <span className=" w-[140px] text-center text-sm p-[5px] border border-gray-300 rounded">{item.time || "--:--"}</span>
+                    <span className="w-[140px] text-center text-sm p-[5px] border border-gray-300 rounded">
+                      {activity.activityType === "SCHOOL_SAMPLING" 
+                        ? activity.samplingTime 
+                        : activity.lunchboxTime || "--:--"}
+                    </span>
                   </div>
                 </div>
 
                 {/* No of sample issued */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <label className="w-full sm:w-40 text-sm font-medium text-gray-800">
-                    No of sample issued
+                    {activity.activityType === "SCHOOL_SAMPLING" 
+                      ? "No of samples issued" 
+                      : "No of lunchboxes issued"}
                   </label>
                   <input
                     type="number"
@@ -158,7 +173,7 @@ export default function PromoterDetails({ open, onClose, activity }) {
                       />
                       {!item.attachments.length && (
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                         
+                          {/* Select files to upload */}
                         </span>
                       )}
                     </div>
@@ -211,15 +226,15 @@ export default function PromoterDetails({ open, onClose, activity }) {
 
       {/* Review Modal */}
       <Dialog open={reviewOpen} onOpenChange={() => setReviewOpen(false)}>
-        <DialogContent className="max-h-[70vh] ">
+        <DialogContent className="max-h-[70vh]">
           <DialogHeader>
             <DialogTitle>Review Attachments</DialogTitle>
             <DialogClose className="absolute top-4 right-4" />
           </DialogHeader>
-          <div className="p-4 space-y-4 max-h-[60vh]  overflow-y-auto ">
+          <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
             {reviewIndex != null &&
               items[reviewIndex].attachments.map((f, i) =>
-                items[reviewIndex].fileTypes[i].startsWith("image/") ? (
+                items[reviewIndex].fileTypes[i]?.startsWith("image/") ? (
                   <img
                     key={i}
                     src={items[reviewIndex].previewUrls[i]}

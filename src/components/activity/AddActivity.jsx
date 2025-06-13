@@ -31,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import toast from "react-hot-toast";
 
 export default function AddActivity({ initialRegion, onSave }) {
   const [formData, setFormData] = useState({

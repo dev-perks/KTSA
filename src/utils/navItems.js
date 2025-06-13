@@ -4,17 +4,17 @@ export const navItems = [
   {
     label: "Activity",
     icon: List,
-    to: "/activity",
+    to: "/admin/activity",
   },
   {
     label: "School",
     icon: School,
-    to: "/school",
+    to: "/admin/school",
   },
   {
     label: "User",
     icon: UserPlus,
-    to: "/user",
+    to: "/admin/user",
   },
   {
     label: "Profile",

@@ -43,9 +43,12 @@ export default function KelloggsLogin() {
       }
 
       if (response.status === 200) {
-        // console.log("Response data : ",response.data.user);
+        const data = response.data.user;
         toast.success("Login success");
-        setTimeout(() => navigate("/activity"), 1000);
+        if(data.role === "ADMIN")
+          setTimeout(() => navigate("/admin/activity"), 1000);
+        else 
+          setTimeout(() => navigate("/activity"), 1000);
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
